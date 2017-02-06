@@ -6,7 +6,7 @@ package com.collector.model.type;
  */
 public enum StateMachineType {
 
-	INIT(0), STOP(1), DOUBT_START(2), START(3), DOUBT_STOP(4);
+	NON_VALID(0), VALID(1), TECHNICAL_ISSUE(2);
 
 	private int value;
 
@@ -25,15 +25,11 @@ public enum StateMachineType {
 	public static StateMachineType fromInteger(int x) {
 		switch (x) {
 		case 0:
-			return INIT;
+			return NON_VALID;
 		case 1:
-			return STOP;
+			return VALID;
 		case 2:
-			return DOUBT_START;
-		case 3:
-			return START;
-		case 4:
-			return DOUBT_STOP;
+			return TECHNICAL_ISSUE;
 		}
 		return null;
 	}

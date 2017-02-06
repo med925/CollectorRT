@@ -4,9 +4,11 @@ import java.sql.Timestamp;
 
 import com.collector.model.type.Point;
 import com.collector.model.type.PointCardinal;
+import com.collector.model.type.RealTimeRecordStatus;
 
 public class RealTimeRecord {
 
+	private long deviceId;
 	private Timestamp recordTime;
 
 	private Point coordinate;
@@ -21,6 +23,8 @@ public class RealTimeRecord {
 
 	private boolean validity;
 	private boolean ignition;
+
+	private RealTimeRecordStatus RealTimeRecordStatus;
 
 	public RealTimeRecord() {
 
@@ -38,6 +42,14 @@ public class RealTimeRecord {
 		this.fuel = fuel;
 		this.validity = validity;
 		this.ignition = ignition;
+	}
+
+	public long getDeviceId() {
+		return deviceId;
+	}
+
+	public void setDeviceId(long deviceId) {
+		this.deviceId = deviceId;
 	}
 
 	public Timestamp getRecordTime() {
@@ -112,11 +124,20 @@ public class RealTimeRecord {
 		this.horizontal = horizontal;
 	}
 
+	public RealTimeRecordStatus getRealTimeRecordStatus() {
+		return RealTimeRecordStatus;
+	}
+
+	public void setRealTimeRecordStatus(RealTimeRecordStatus realTimeRecordStatus) {
+		RealTimeRecordStatus = realTimeRecordStatus;
+	}
+
 	@Override
 	public String toString() {
-		return "RealTimeRecord [recordTime=" + recordTime + ", coordinate=" + coordinate + ", vertical=" + vertical
-				+ ", horizontal=" + horizontal + ", speed=" + speed + ", temperature=" + temperature + ", fuel=" + fuel
-				+ ", validity=" + validity + ", ignition=" + ignition + "]";
+		return "RealTimeRecord [deviceId=" + deviceId + ", recordTime=" + recordTime + ", coordinate=" + coordinate
+				+ ", vertical=" + vertical + ", horizontal=" + horizontal + ", speed=" + speed + ", fuel=" + fuel
+				+ ", temperature=" + temperature + ", validity=" + validity + ", ignition=" + ignition
+				+ ", RealTimeRecordStatus=" + RealTimeRecordStatus + "]";
 	}
 
 }
