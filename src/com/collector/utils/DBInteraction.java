@@ -31,7 +31,7 @@ public class DBInteraction {
 		}
 	}
 
-	public static void disconnect() {
+	public void disconnect() {
 		try {
 			con.close();
 		} catch (SQLException e) {

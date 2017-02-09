@@ -9,6 +9,7 @@ import com.collector.model.type.RealTimeRecordStatus;
 public class RealTimeRecord {
 
 	private long deviceId;
+	
 	private Timestamp recordTime;
 
 	private Point coordinate;
@@ -23,6 +24,7 @@ public class RealTimeRecord {
 
 	private boolean validity;
 	private boolean ignition;
+
 
 	private RealTimeRecordStatus RealTimeRecordStatus;
 

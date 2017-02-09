@@ -17,6 +17,7 @@ import com.collector.service.Decoder;
 public class ClientWorker implements Runnable {
 
 	int cursor;
+	int deviceId = 200201;
 
 	public ClientWorker() {
 		super();
@@ -32,12 +33,15 @@ public class ClientWorker implements Runnable {
 			InputStream input = null;
 			int MAX_SEPEED = 0;
 			int FREQUENCY_EXECUTION = 0;
-
+			int DURATION_OF_NON_VALIDITY = 0;
+			int DURATION_OF_TECHNICAL_ISSUE = 0;
 			try {
 				input = new FileInputStream("config.properties");
 				prop.load(input);
 				FREQUENCY_EXECUTION = Integer.parseInt(prop.getProperty("FREQUENCY_EXECUTION"));
 				MAX_SEPEED = Integer.parseInt(prop.getProperty("MAX_SEPEED"));
+				DURATION_OF_NON_VALIDITY = Integer.parseInt(prop.getProperty("DURATION_OF_NON_VALIDITY"));
+				DURATION_OF_TECHNICAL_ISSUE = Integer.parseInt(prop.getProperty("DURATION_OF_TECHNICAL_ISSUE"));
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			} finally {
@@ -54,7 +58,7 @@ public class ClientWorker implements Runnable {
 
 				System.out.println("<============ THE TASK WAS STARTED AT " + new Date() + " ==============>");
 
-				ResultSet lastTrame = realTimeDAO.getLastBruteTrame(200204);
+				ResultSet lastTrame = realTimeDAO.getLastBruteTrame(deviceId);
 				RealTimeRecord realTimeRecord = null;
 
 				if (!lastTrame.isBeforeFirst()) {
@@ -62,28 +66,33 @@ public class ClientWorker implements Runnable {
 					System.out.println("NO DATA");
 					System.out.println("GET OLD TRAME AND VERIFY !");
 
-					ResultSet lastRealTimeRecord = realTimeDAO.getLastRealTimeRecord(200204);
+					ResultSet lastRealTimeRecord = realTimeDAO.getLastRealTimeRecord(deviceId);
 
 					while (lastRealTimeRecord.next()) {
 						try {
-							SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
-							Date parsedDate = dateFormat.parse(lastRealTimeRecord.getString("recordTime"));
+							SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+							Date parsedDate = dateFormat.parse(lastRealTimeRecord.getString("record_time"));
 							Timestamp timestampOfLastRealTimeRecord = new java.sql.Timestamp(parsedDate.getTime());
 
-							System.out.println(new Date());
+							System.out.println(new Timestamp(new Date().getTime()));
 							System.out.println(timestampOfLastRealTimeRecord);
 
 							System.out.println(new Date().getTime());
 							System.out.println(timestampOfLastRealTimeRecord.getTime());
 
 							float numberOfSecondBetweenNowAndTimeOfLastTrame = new Date().getTime()
-									- timestampOfLastRealTimeRecord.getTime();
+									- timestampOfLastRealTimeRecord.getTime() - 3600000;
 
 							System.out.println("NUMBER OF MINUTES BETWEEN NOW AND LAST TRAME IS => "
 									+ numberOfSecondBetweenNowAndTimeOfLastTrame / 60000 + " min");
 
-							if ((numberOfSecondBetweenNowAndTimeOfLastTrame) >= (1800000 + 3600000)) {
+							if ((numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_OF_NON_VALIDITY)
+									&& (numberOfSecondBetweenNowAndTimeOfLastTrame < DURATION_OF_TECHNICAL_ISSUE)) {
 								System.out.println("THERE IS A PROBLEM HERE MAYBE THE CAR IN TUNNEL OR GARAGE !");
+								realTimeDAO.updateRealTimeRecordStatus(deviceId, RealTimeRecordStatus.NON_VALID);
+							} else if (numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_OF_TECHNICAL_ISSUE) {
+								System.out.println("THERE IS TECHNICAL ISSUE HERE !");
+								realTimeDAO.updateRealTimeRecordStatus(deviceId, RealTimeRecordStatus.TECHNICAL_ISSUE);
 							}
 						} catch (Exception e) {
 
@@ -105,7 +114,7 @@ public class ClientWorker implements Runnable {
 					if (realTimeRecord != null && realTimeRecord.isValidity() && speedRequirement
 							&& coordinateRequirement) {
 
-						realTimeRecord.setDeviceId(200204);
+						realTimeRecord.setDeviceId(deviceId);
 						realTimeRecord.setRealTimeRecordStatus(RealTimeRecordStatus.VALID);
 
 						System.out.println("WE HAVE HERE A GOOD TRAME ! ==> [UPDATE OLD RECORD]");
@@ -123,6 +132,7 @@ public class ClientWorker implements Runnable {
 				}
 
 				System.out.println("<============ THE TASK WAS ENDED AT " + new Date() + " ==============>");
+				realTimeDAO.closeConnecions();
 				Thread.sleep(FREQUENCY_EXECUTION * 1000);
 			}
 
