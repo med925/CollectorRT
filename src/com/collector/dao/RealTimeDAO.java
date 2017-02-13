@@ -7,8 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import com.collector.model.RealTimeRecord;
+import com.collector.model.Record;
 import com.collector.model.type.RealTimeRecordStatus;
+import com.collector.model.type.RecordType;
 import com.collector.utils.DBInteraction;
 
 public class RealTimeDAO {
@@ -55,109 +56,79 @@ public class RealTimeDAO {
 		return bruteTrames;
 	}
 
-	// public boolean addRealTimeRecord(RealTimeRecord realTimeRecord) {
-	// String insertRequest = "INSERT INTO real_time
-	// (device_id,recordTime,coordinate,vertical,horizontal,speed,fuel,temperature,validity,ignition,status)"
-	// + "VALUES(" + realTimeRecord.getDeviceId() + ", '" +
-	// realTimeRecord.getRecordTime() + "',"
-	// + "ST_GeomFromText('POINT(" +
-	// realTimeRecord.getCoordinate().getLatitude() + " "
-	// + realTimeRecord.getCoordinate().getLongitude() + ")'),'" +
-	// realTimeRecord.getVertical() + "','"
-	// + realTimeRecord.getHorizontal() + "'," + realTimeRecord.getSpeed() + ","
-	// + realTimeRecord.getFuel()
-	// + ",'" + realTimeRecord.getTemperature() + "'," +
-	// realTimeRecord.isValidity() + ","
-	// + realTimeRecord.isIgnition() + ",'" +
-	// realTimeRecord.getRealTimeRecordStatus() + "')";
-	// this.rimtrackClient.connect();
-	// System.out.println(insertRequest);
-	// boolean isPersisted = this.rimtrackClient.MAJ(insertRequest) != 0 ? true
-	// : false;
-	// return isPersisted;
-	// }
+	public boolean addRealTimeRecord(Record realTimeRecord) {
+		String insertRequest = "";
+		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
+			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,vertical,horizontal,speed,fuel,temperature,validity,ignition,status,type)"
+					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
+					+ realTimeRecord.getCoordinate().getLatitude() + "," + realTimeRecord.getCoordinate().getLongitude()
+					+ ",'" + realTimeRecord.getVertical() + "','" + realTimeRecord.getHorizontal() + "',"
+					+ realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ",'"
+					+ realTimeRecord.getTemperature() + "'," + realTimeRecord.isValidity() + ","
+					+ realTimeRecord.isIgnition() + ",'" + realTimeRecord.getRealTimeRecordStatus() + "','"
+					+ realTimeRecord.getRecordType() + "')";
+		}
 
-	public boolean addRealTimeRecord(RealTimeRecord realTimeRecord) {
-		String insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,vertical,horizontal,speed,fuel,temperature,validity,ignition,status)"
-				+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
-				+ realTimeRecord.getCoordinate().getLatitude() + "," + realTimeRecord.getCoordinate().getLongitude()
-				+ ",'" + realTimeRecord.getVertical() + "','" + realTimeRecord.getHorizontal() + "',"
-				+ realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ",'" + realTimeRecord.getTemperature()
-				+ "'," + realTimeRecord.isValidity() + "," + realTimeRecord.isIgnition() + ",'"
-				+ realTimeRecord.getRealTimeRecordStatus() + "')";
+		if (realTimeRecord.getRecordType() == RecordType.AA) {
+			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,vertical,horizontal,speed,fuel,temperature,validity,ignition,status,type,power,mems_x, mems_y, mems_z,sendFlag,satInView)"
+					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
+					+ realTimeRecord.getCoordinate().getLatitude() + "," + realTimeRecord.getCoordinate().getLongitude()
+					+ ",'" + realTimeRecord.getVertical() + "','" + realTimeRecord.getHorizontal() + "',"
+					+ realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ",'"
+					+ realTimeRecord.getTemperature() + "'," + realTimeRecord.isValidity() + ","
+					+ realTimeRecord.isIgnition() + ",'" + realTimeRecord.getRealTimeRecordStatus() + "','"
+					+ realTimeRecord.getRecordType() + "'," + realTimeRecord.getPower() + ","
+					+ realTimeRecord.getMems_x() + "," + realTimeRecord.getMems_y() + "," + realTimeRecord.getMems_z()
+					+ "," + realTimeRecord.getSendFlag() + "," + realTimeRecord.getSatInView() + ")";
+		}
+
 		this.rimtrackClient.connect();
 		System.out.println(insertRequest);
 		boolean isPersisted = this.rimtrackClient.MAJ(insertRequest) != 0 ? true : false;
 		return isPersisted;
 	}
 
-	// public boolean updateRealTimeRecord(RealTimeRecord realTimeRecord) {
-	// String updateRequest = "UPDATE real_time SET recordTime = '" +
-	// realTimeRecord.getRecordTime()
-	// + "', coordinate = ST_GeomFromText('POINT(" +
-	// realTimeRecord.getCoordinate().getLatitude() + " "
-	// + realTimeRecord.getCoordinate().getLongitude() + ")'), vertical = '" +
-	// realTimeRecord.getVertical()
-	// + "', horizontal = '" + realTimeRecord.getHorizontal() + "', speed = " +
-	// realTimeRecord.getSpeed()
-	// + ", fuel = " + realTimeRecord.getFuel() + ", temperature = '" +
-	// realTimeRecord.getTemperature()
-	// + "', validity = " + realTimeRecord.isValidity() + " ,ignition = " +
-	// realTimeRecord.isIgnition()
-	// + ",status = '" + realTimeRecord.getRealTimeRecordStatus() + "' where
-	// device_id = "
-	// + realTimeRecord.getDeviceId();
-	// System.out.println(updateRequest);
-	// this.rimtrackClient.connect();
-	// boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true
-	// : false;
-	// return isPersisted;
-	// }
+	public boolean updateRealTimeRecord(Record realTimeRecord) {
+		String updateRequest = "";
+		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
+			updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
+					+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
+					+ realTimeRecord.getCoordinate().getLongitude() + ", vertical = '" + realTimeRecord.getVertical()
+					+ "', horizontal = '" + realTimeRecord.getHorizontal() + "', speed = " + realTimeRecord.getSpeed()
+					+ ", fuel = " + realTimeRecord.getFuel() + ", temperature = '" + realTimeRecord.getTemperature()
+					+ "', validity = " + realTimeRecord.isValidity() + " ,ignition = " + realTimeRecord.isIgnition()
+					+ ",status = '" + realTimeRecord.getRealTimeRecordStatus() + "' where deviceid = "
+					+ realTimeRecord.getDeviceId();
+		}
 
-	public boolean updateRealTimeRecord(RealTimeRecord realTimeRecord) {
-		String updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
-				+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
-				+ realTimeRecord.getCoordinate().getLongitude() + ", vertical = '" + realTimeRecord.getVertical()
-				+ "', horizontal = '" + realTimeRecord.getHorizontal() + "', speed = " + realTimeRecord.getSpeed()
-				+ ", fuel = " + realTimeRecord.getFuel() + ", temperature = '" + realTimeRecord.getTemperature()
-				+ "', validity = " + realTimeRecord.isValidity() + " ,ignition = " + realTimeRecord.isIgnition()
-				+ ",status = '" + realTimeRecord.getRealTimeRecordStatus() + "' where deviceid = "
-				+ realTimeRecord.getDeviceId();
+		if (realTimeRecord.getRecordType() == RecordType.AA) {
+			updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
+					+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
+					+ realTimeRecord.getCoordinate().getLongitude() + ", vertical = '" + realTimeRecord.getVertical()
+					+ "', horizontal = '" + realTimeRecord.getHorizontal() + "', speed = " + realTimeRecord.getSpeed()
+					+ ", fuel = " + realTimeRecord.getFuel() + ", temperature = '" + realTimeRecord.getTemperature()
+					+ "', validity = " + realTimeRecord.isValidity() + " ,ignition = " + realTimeRecord.isIgnition()
+					+ ",status = '" + realTimeRecord.getRealTimeRecordStatus() + "' ,power = "
+					+ realTimeRecord.getPower() + " ,mems_x = " + realTimeRecord.getMems_x() + " ,mems_y = "
+					+ realTimeRecord.getMems_y() + " ,mems_z = " + realTimeRecord.getMems_z() + " ,sendFlag = "
+					+ realTimeRecord.getSendFlag() + " ,satInView = " + realTimeRecord.getSatInView()
+					+ " where deviceid = " + realTimeRecord.getDeviceId();
+		}
+
 		System.out.println(updateRequest);
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
 		return isPersisted;
 	}
-
-	// public boolean updateRealTimeRecordStatus(long deviceId,
-	// RealTimeRecordStatus RealTimeRecordStatus) {
-	// String updateRequest = "UPDATE real_time SET status = '" +
-	// RealTimeRecordStatus + "' where device_id = "
-	// + deviceId;
-	// System.out.println(updateRequest);
-	// this.rimtrackClient.connect();
-	// boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true
-	// : false;
-	// return isPersisted;
-	// }
 
 	public boolean updateRealTimeRecordStatus(long deviceId, RealTimeRecordStatus RealTimeRecordStatus) {
-		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus + "' where deviceid = "
-				+ deviceId;
+		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus
+				+ "',speed = 0 where deviceid = " + deviceId;
 		System.out.println(updateRequest);
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
 		return isPersisted;
 	}
-
-	// public ResultSet getLastRealTimeRecord(int deviceId) throws SQLException
-	// {
-	// String selectRequest = "SELECT * FROM `real_time` WHERE device_id = " +
-	// deviceId + " LIMIT 1";
-	// this.rimtrackClient.connect();
-	// ResultSet bruteTrames = this.rimtrackClient.select(selectRequest);
-	// return bruteTrames;
-	// }
 
 	public ResultSet getLastRealTimeRecord(int deviceId) throws SQLException {
 		String selectRequest = "SELECT * FROM real_time_dev WHERE deviceid = " + deviceId + " LIMIT 1";

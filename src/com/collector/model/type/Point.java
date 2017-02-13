@@ -12,7 +12,7 @@ public class Point {
 	private double longitude;
 	private double latitude;
 
-	public Point(double longitude, double latitude) {
+	public Point(double latitude, double longitude) {
 		super();
 		this.longitude = longitude;
 		this.latitude = latitude;
