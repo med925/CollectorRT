@@ -17,13 +17,10 @@ import com.collector.service.Decoder;
 
 public class ClientWorker implements Runnable {
 
-	int cursor;
-
-	int deviceIds[] = { 200203, 200208, 203508, 200201, 200310, 200313, 200204 };
+	int deviceIds[] = { 200203, 200206,200302, 208209, 200208, 200201, 200202, 200207, 200310, 200313, 200204 };
 
 	public ClientWorker() {
 		super();
-		this.cursor = 0;
 	}
 
 	@Override
@@ -40,7 +37,9 @@ public class ClientWorker implements Runnable {
 			int MAX_SEPEED = 0;
 			int FREQUENCY_EXECUTION = 0;
 			int DURATION_OF_NON_VALIDITY = 0;
+			int DURATION_MAX_OF_NON_VALIDITY = 0;
 			int DURATION_OF_TECHNICAL_ISSUE = 0;
+			int DURATION_MAX_OF_TECHNICAL_ISSUE = 0;
 			int MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE = 0;
 			int MAX_FRAMES_LATENCY_IN_STOP_CASE = 0;
 			try {
@@ -68,7 +67,7 @@ public class ClientWorker implements Runnable {
 			for (;;) {
 
 				for (int i = 0; i < this.deviceIds.length; i++) {
-					// deviceId = this.deviceIds[i];
+
 					System.out.println("<============ THE TASK WAS STARTED AT " + new Date() + " for the device : "
 							+ this.deviceIds[i] + "==============>");
 
@@ -91,19 +90,20 @@ public class ClientWorker implements Runnable {
 						ResultSet lastRealTimeRecord = realTimeDAO.getLastRealTimeRecord(this.deviceIds[i]);
 
 						while (lastRealTimeRecord.next()) {
+
 							try {
 								SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 								Date parsedDate = dateFormat.parse(lastRealTimeRecord.getString("record_time"));
 								Timestamp timestampOfLastRealTimeRecord = new java.sql.Timestamp(parsedDate.getTime());
 								int speedOfLastRealTimeRecord = lastRealTimeRecord.getInt("speed");
+								String stateOfLastRealTimeRecord = lastRealTimeRecord.getString("status");
 
 								System.out.println("Speed of last trame ====> " + speedOfLastRealTimeRecord);
+								System.out.println("Status of last trame ====> " + stateOfLastRealTimeRecord);
 
-								System.out.println(new Timestamp(new Date().getTime()));
-								System.out.println(timestampOfLastRealTimeRecord);
-
-								System.out.println(new Date().getTime());
-								System.out.println(timestampOfLastRealTimeRecord.getTime());
+								System.out.println("NOW : " + new Date().getTime());
+								System.out.println(
+										"TIME OF LAST VALID TRAME : " + timestampOfLastRealTimeRecord.getTime());
 
 								float numberOfSecondBetweenNowAndTimeOfLastTrame = new Date().getTime()
 										- timestampOfLastRealTimeRecord.getTime() - 3600000;
@@ -111,19 +111,35 @@ public class ClientWorker implements Runnable {
 								System.out.println("NUMBER OF MINUTES BETWEEN NOW AND LAST TRAME IS => "
 										+ numberOfSecondBetweenNowAndTimeOfLastTrame / 60000 + " min");
 
-								DURATION_OF_NON_VALIDITY += (speedOfLastRealTimeRecord > 5)
-										? MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE : MAX_FRAMES_LATENCY_IN_STOP_CASE;
+								DURATION_MAX_OF_NON_VALIDITY = ((speedOfLastRealTimeRecord > 5)
+										? MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE : MAX_FRAMES_LATENCY_IN_STOP_CASE)
+										+ DURATION_OF_NON_VALIDITY;
 
-								if ((numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_OF_NON_VALIDITY)
-										&& (numberOfSecondBetweenNowAndTimeOfLastTrame < DURATION_OF_TECHNICAL_ISSUE)) {
+								DURATION_MAX_OF_TECHNICAL_ISSUE = ((speedOfLastRealTimeRecord > 5)
+										? MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE : MAX_FRAMES_LATENCY_IN_STOP_CASE)
+										+ DURATION_OF_TECHNICAL_ISSUE;
+
+								System.out.println("DURATION_MAX_OF_NON_VALIDITY : "
+										+ DURATION_MAX_OF_NON_VALIDITY / 60000 + " min");
+
+								System.out.println("DURATION_MAX_OF_TECHNICAL_ISSUE : "
+										+ DURATION_MAX_OF_TECHNICAL_ISSUE / 60000 + " min");
+
+								if ((numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_MAX_OF_NON_VALIDITY)
+										&& (numberOfSecondBetweenNowAndTimeOfLastTrame < DURATION_OF_TECHNICAL_ISSUE)
+										&& !(stateOfLastRealTimeRecord.equals("NON_VALID"))/**/) {
 									System.out.println("THERE IS A PROBLEM HERE MAYBE THE CAR IN TUNNEL OR GARAGE !");
 									realTimeDAO.updateRealTimeRecordStatus(this.deviceIds[i],
 											RealTimeRecordStatus.NON_VALID);
-								} else if (numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_OF_TECHNICAL_ISSUE) {
+								}
+
+								if (numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_MAX_OF_TECHNICAL_ISSUE
+										&& !stateOfLastRealTimeRecord.equals("TECHNICAL_ISSUE")) {
 									System.out.println("THERE IS TECHNICAL ISSUE HERE !");
 									realTimeDAO.updateRealTimeRecordStatus(this.deviceIds[i],
 											RealTimeRecordStatus.TECHNICAL_ISSUE);
 								}
+
 							} catch (Exception e) {
 
 							}
@@ -131,18 +147,24 @@ public class ClientWorker implements Runnable {
 					} else {
 
 						while (lastTrame.next()) {
+
 							String line = lastTrame.getString("last_trame");
 							System.out.println(lastTrame.getString("last_time") + " | " + line + " | " + line.length());
 
 							if (line.substring(0, 2).equals("AA")) {
-								realTimeRecord = Decoder.decodeAALine(line);
-								System.out.println("Decode of AA");
-								realTimeRecord.setRecordType(RecordType.AA);
+								if (Decoder.isValidAATrame(line)) {
+									realTimeRecord = Decoder.decodeAALine(line);
+									System.out.println("Decode of AA");
+									realTimeRecord.setRecordType(RecordType.AA);
+								}
 							}
 							if (line.substring(0, 6).equals("$GPRMC")) {
-								realTimeRecord = Decoder.decodeGPRMCLine(line);
-								System.out.println("Decode of $GPRMC");
-								realTimeRecord.setRecordType(RecordType.GPRMC);
+								if (Decoder.isValidGPRMCTrame(line)) {
+									realTimeRecord = Decoder.decodeGPRMCLine(line);
+									System.out.println("Decode of $GPRMC");
+									realTimeRecord.setRecordType(RecordType.GPRMC);
+								}
+
 							}
 
 						}

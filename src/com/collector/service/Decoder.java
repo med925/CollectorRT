@@ -54,6 +54,22 @@ public class Decoder {
 			return null;
 	}
 
+	public static boolean isValidAATrame(String line) {
+		if (line.length() == 74 || line.length() == 104) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public static boolean isValidGPRMCTrame(String line) {
+		if (line.length() == 75) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	public static Record decodeAALine(String line) {
 		int lineLength = line.length();
 		String Hour = String.format("%02d", Integer.parseInt(line.substring(4, 10), 16) / 3600) + // hour
@@ -109,7 +125,6 @@ public class Decoder {
 			SatInView = Integer.parseInt(line.substring(100, 102));
 			signal = Integer.parseInt(line.substring(102, 104));
 		}
-System.out.println(Speed+" milles !");
 		Record record = new Record(timestamp, new Point(Lat, Lon), (int) Math.round(Integer.parseInt(Speed) * 0.1852),
 				Power, Ignition, Mems_x, Mems_y, Mems_z, SendFlag, SatInView, signal, Validity);
 		return record;

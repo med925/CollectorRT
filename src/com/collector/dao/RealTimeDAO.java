@@ -123,7 +123,7 @@ public class RealTimeDAO {
 
 	public boolean updateRealTimeRecordStatus(long deviceId, RealTimeRecordStatus RealTimeRecordStatus) {
 		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus
-				+ "',speed = 0 where deviceid = " + deviceId;
+				+ "' where deviceid = " + deviceId;
 		System.out.println(updateRequest);
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
