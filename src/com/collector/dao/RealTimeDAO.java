@@ -1,6 +1,5 @@
 package com.collector.dao;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
@@ -27,14 +26,14 @@ public class RealTimeDAO {
 
 		Properties prop = new Properties();
 		InputStream input = null;
-		input = new FileInputStream("config.properties");
+		// input = new FileInputStream("config.properties");
+		input = getClass().getClassLoader().getResource("config.properties").openStream();
+
 		prop.load(input);
 
 		MAX_FRAMES_LATENCY = Integer.parseInt(prop.getProperty("MAX_FRAMES_LATENCY"));
-
 		this.rimtrackRaw = new DBInteraction(prop.getProperty("RIM_TRACK_RAW_URL"),
 				prop.getProperty("RIM_TRACK_RAW_USERNAME"), prop.getProperty("RIM_TRACK_RAW_PASSWORD"));
-
 		this.rimtrackClient = new DBInteraction(prop.getProperty("RIM_TRACK_CLIENT_URL"),
 				prop.getProperty("RIM_TRACK_CLIENT_USERNAME"), prop.getProperty("RIM_TRACK_CLIENT_PASSWORD"));
 
@@ -57,7 +56,9 @@ public class RealTimeDAO {
 	}
 
 	public boolean addRealTimeRecord(Record realTimeRecord) {
+
 		String insertRequest = "";
+
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
 			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,vertical,horizontal,speed,fuel,temperature,validity,ignition,status,type)"
 					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
@@ -122,8 +123,8 @@ public class RealTimeDAO {
 	}
 
 	public boolean updateRealTimeRecordStatus(long deviceId, RealTimeRecordStatus RealTimeRecordStatus) {
-		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus
-				+ "' where deviceid = " + deviceId;
+		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus + "' where deviceid = "
+				+ deviceId;
 		System.out.println(updateRequest);
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
@@ -134,6 +135,14 @@ public class RealTimeDAO {
 		String selectRequest = "SELECT * FROM real_time_dev WHERE deviceid = " + deviceId + " LIMIT 1";
 		this.rimtrackClient.connect();
 		ResultSet bruteTrames = this.rimtrackClient.select(selectRequest);
+		System.out.println(selectRequest);
+		return bruteTrames;
+	}
+
+	public ResultSet getAllDevices() throws SQLException {
+		String selectRequest = "";
+		this.rimtrackClient.connect();
+		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
 		System.out.println(selectRequest);
 		return bruteTrames;
 	}

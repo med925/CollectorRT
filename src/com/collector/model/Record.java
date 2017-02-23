@@ -252,15 +252,4 @@ public class Record {
 				+ ", signal=" + signal + ", recordType=" + recordType + "]";
 	}
 
-	/*
-	 * @Override public String toString() { return
-	 * "--------------------- RECORD DEFINITION ---------------------\n" +
-	 * "record [time=" + recordTime + ",\ncoordinate=" + coordinate +
-	 * ",\nspeed=" + speed + ",\npower=" + ((power > 128) ? "Battery" :
-	 * "Sector") + power % 128 + ",\nignition=" + (ignition ? "true" : "false")
-	 * + ",\nmems_x=" + mems_x + ",\nmems_y=" + mems_y + ",\nmems_z=" + mems_z +
-	 * ",\nsendFlag=" + sendFlag + "]" +
-	 * "\n--------------------- ------ -------- ---------------------"; }
-	 */
-
 }

@@ -63,7 +63,7 @@ public class Decoder {
 	}
 	
 	public static boolean isValidGPRMCTrame(String line) {
-		if (line.length() == 75) {
+		if (line.length() == 75 || line.length() == 86) {
 			return true;
 		} else {
 			return false;
