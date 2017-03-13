@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import com.collector.model.Record;
 import com.collector.model.type.Point;
 import com.collector.model.type.PointCardinal;
+import com.collector.model.type.RecordType;
 
 public class Decoder {
 
@@ -20,7 +21,10 @@ public class Decoder {
 
 		String[] ops = line.split(",");
 
+		// $GPRMC,164351.00,A,3217.7658,N,00625.4544,W,000.0,251°C,230217,00.0,W,064CB,FE0A0A0066
+
 		if (ops.length == 13) {
+
 			PointCardinal vertical = (ops[4].equals("N")) ? PointCardinal.NORD : PointCardinal.SUD; // S
 			PointCardinal horizontal = (ops[6].equals("E")) ? PointCardinal.EST : PointCardinal.OUEST;
 
@@ -47,29 +51,31 @@ public class Decoder {
 			}
 
 			Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-
-			return new Record(timestamp, p, vertical, horizontal, (int) Double.parseDouble(ops[7]), ops[8],
+			Record record = new Record(timestamp, p, vertical, horizontal, (int) Double.parseDouble(ops[7]), ops[8],
 					(int) Double.parseDouble(ops[10]), validity, ignition);
+			record.setRecordType(RecordType.GPRMC);
+			System.gc();
+			return record;
 		} else
 			return null;
 	}
 
 	public static boolean isValidAATrame(String line) {
-		if (line.length() == 74 || line.length() == 104) {
+		if (line.length() == 74 /* || line.length() == 104 */) {
 			return true;
 		} else {
 			return false;
 		}
 	}
-	
+
 	public static boolean isValidGPRMCTrame(String line) {
-		if (line.length() == 75 || line.length() == 86) {
+		if (line.length() == 75/* || line.length() == 86 */) {
 			return true;
 		} else {
 			return false;
 		}
 	}
-	
+
 	public static Record decodeAALine(String line) {
 		int lineLength = line.length();
 		String Hour = String.format("%02d", Integer.parseInt(line.substring(4, 10), 16) / 3600) + // hour
@@ -127,6 +133,9 @@ public class Decoder {
 		}
 		Record record = new Record(timestamp, new Point(Lat, Lon), (int) Math.round(Integer.parseInt(Speed) * 0.1852),
 				Power, Ignition, Mems_x, Mems_y, Mems_z, SendFlag, SatInView, signal, Validity);
+		record.setRecordType(RecordType.AA);
+		System.gc();
 		return record;
+		
 	}
 }

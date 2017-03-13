@@ -1,5 +1,6 @@
 package com.collector.dao;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
@@ -7,6 +8,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 import com.collector.model.Record;
+import com.collector.model.type.Point;
 import com.collector.model.type.RealTimeRecordStatus;
 import com.collector.model.type.RecordType;
 import com.collector.utils.DBInteraction;
@@ -27,8 +29,8 @@ public class RealTimeDAO {
 		Properties prop = new Properties();
 		InputStream input = null;
 		// input = new FileInputStream("config.properties");
-		input = getClass().getClassLoader().getResource("config.properties").openStream();
-
+//		input = getClass().getClassLoader().getResource("config.properties").openStream();
+		input = new FileInputStream("config.properties");
 		prop.load(input);
 
 		MAX_FRAMES_LATENCY = Integer.parseInt(prop.getProperty("MAX_FRAMES_LATENCY"));
@@ -47,9 +49,11 @@ public class RealTimeDAO {
 	}
 
 	public ResultSet getLastBruteTrame(int deviceId) throws SQLException {
+//		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId
+//				+ " and last_time > DATE_SUB(now(),INTERVAL " + MAX_FRAMES_LATENCY
+//				+ " SECOND) and last_time <= CAST(now() as datetime) LIMIT 1000";
 		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId
-				+ " and last_time > DATE_SUB(now(),INTERVAL " + MAX_FRAMES_LATENCY
-				+ " SECOND) and last_time <= CAST(now() as datetime) LIMIT 1000";
+				+ " LIMIT 1000";
 		this.rimtrackRaw.connect();
 		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
 		return bruteTrames;
@@ -139,6 +143,81 @@ public class RealTimeDAO {
 		return bruteTrames;
 	}
 
+	public Record getLastRealTimeRecords(int deviceId) throws SQLException {
+		String selectRequest = "SELECT * FROM real_time_dev WHERE deviceid = " + deviceId + " LIMIT 1";
+		Record record = null;
+		this.rimtrackClient.connect();
+		ResultSet realTimeRecordResultSSet = this.rimtrackClient.select(selectRequest);
+		if (realTimeRecordResultSSet.next()) {
+			if (realTimeRecordResultSSet.getString("type").equals("GPRMC")) {
+
+				record = new Record();
+
+				record.setRecordTime(realTimeRecordResultSSet.getTimestamp("record_time"));
+				record.setCoordinate(new Point(realTimeRecordResultSSet.getDouble("latitude"),
+						realTimeRecordResultSSet.getDouble("longitude")));
+				record.setDeviceId(realTimeRecordResultSSet.getLong("deviceid"));
+				record.setTemperature(realTimeRecordResultSSet.getString("temperature"));
+				record.setSpeed(realTimeRecordResultSSet.getInt("speed"));
+				record.setFuel(realTimeRecordResultSSet.getInt("fuel"));
+				record.setValidity(realTimeRecordResultSSet.getBoolean("validity"));
+				record.setIgnition(realTimeRecordResultSSet.getBoolean("ignition"));
+				RealTimeRecordStatus status = null;
+
+				if (realTimeRecordResultSSet.getString("status").equals("VALID")) {
+					status = RealTimeRecordStatus.VALID;
+				}
+				if (realTimeRecordResultSSet.getString("status").equals("NON_VALID")) {
+					status = RealTimeRecordStatus.NON_VALID;
+				}
+				if (realTimeRecordResultSSet.getString("status").equals("TECHNICAL_ISSUE")) {
+					status = RealTimeRecordStatus.TECHNICAL_ISSUE;
+				}
+				record.setRealTimeRecordStatus(status);
+				record.setRecordType(RecordType.GPRMC);
+			}
+			if (realTimeRecordResultSSet.getString("type").equals("AA")) {
+
+				record = new Record();
+				record.setRecordTime(realTimeRecordResultSSet.getTimestamp("record_time"));
+				record.setCoordinate(new Point(realTimeRecordResultSSet.getDouble("latitude"),
+						realTimeRecordResultSSet.getDouble("longitude")));
+				record.setDeviceId(realTimeRecordResultSSet.getLong("deviceid"));
+				record.setTemperature(realTimeRecordResultSSet.getString("temperature"));
+				record.setSpeed(realTimeRecordResultSSet.getInt("speed"));
+				record.setFuel(realTimeRecordResultSSet.getInt("fuel"));
+				record.setValidity(realTimeRecordResultSSet.getBoolean("validity"));
+				record.setIgnition(realTimeRecordResultSSet.getBoolean("ignition"));
+
+				record.setPower(realTimeRecordResultSSet.getInt("power"));
+				record.setMems_x(realTimeRecordResultSSet.getInt("mems_x"));
+				record.setMems_y(realTimeRecordResultSSet.getInt("mems_y"));
+				record.setMems_z(realTimeRecordResultSSet.getInt("mems_z"));
+				record.setSendFlag(realTimeRecordResultSSet.getInt("sendFlag"));
+				record.setSatInView(realTimeRecordResultSSet.getInt("satInView"));
+				record.setSignal(realTimeRecordResultSSet.getInt("signal"));
+
+				RealTimeRecordStatus status = null;
+
+				if (realTimeRecordResultSSet.getString("status").equals("VALID")) {
+					status = RealTimeRecordStatus.VALID;
+				}
+				if (realTimeRecordResultSSet.getString("status").equals("NON_VALID")) {
+					status = RealTimeRecordStatus.NON_VALID;
+				}
+				if (realTimeRecordResultSSet.getString("status").equals("TECHNICAL_ISSUE")) {
+					status = RealTimeRecordStatus.TECHNICAL_ISSUE;
+				}
+				record.setRealTimeRecordStatus(status);
+				record.setRecordType(RecordType.AA);
+
+			}
+		}
+		this.rimtrackClient.disconnect();
+		// System.out.println(selectRequest);
+		return record;
+	}
+
 	public ResultSet getAllDevices() throws SQLException {
 		String selectRequest = "";
 		this.rimtrackClient.connect();
@@ -150,6 +229,7 @@ public class RealTimeDAO {
 	public void closeConnecions() {
 		this.rimtrackClient.disconnect();
 		this.rimtrackRaw.disconnect();
+		System.gc();
 	}
 
 }
