@@ -1,12 +1,10 @@
 package com.collector.dao;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 
+import com.collector.model.DbProperties;
 import com.collector.model.Record;
 import com.collector.model.type.Point;
 import com.collector.model.type.RealTimeRecordStatus;
@@ -16,44 +14,24 @@ import com.collector.utils.DBInteraction;
 public class RealTimeDAO {
 
 	private DBInteraction rimtrackClient;
-	// private DBInteraction rimtrackArchive;
 	private DBInteraction rimtrackRaw;
+	private DBInteraction rimtrackTenant;
 
-	int MAX_FRAMES_LATENCY;
+	public RealTimeDAO(DbProperties dbProperties) throws IOException {
 
-	public RealTimeDAO() throws IOException {
-		// this.rimtrackArchive = new
-		// DBInteraction("jdbc:mysql://localhost:3306/rimtrack_archive", "root",
-		// "");
+		this.rimtrackRaw = new DBInteraction(dbProperties.getRawDbUrl()+dbProperties.getRawDbName(), dbProperties.getRawDbUsername(),
+				dbProperties.getRawDbPassword());
 
-		Properties prop = new Properties();
-		InputStream input = null;
-		// input = new FileInputStream("config.properties");
-//		input = getClass().getClassLoader().getResource("config.properties").openStream();
-		input = new FileInputStream("config.properties");
-		prop.load(input);
+		this.rimtrackClient = new DBInteraction(dbProperties.getClientDbUrl()+dbProperties.getClientDbName(), dbProperties.getClientDbUsername(),
+				dbProperties.getClientDbPassword());
 
-		MAX_FRAMES_LATENCY = Integer.parseInt(prop.getProperty("MAX_FRAMES_LATENCY"));
-		this.rimtrackRaw = new DBInteraction(prop.getProperty("RIM_TRACK_RAW_URL"),
-				prop.getProperty("RIM_TRACK_RAW_USERNAME"), prop.getProperty("RIM_TRACK_RAW_PASSWORD"));
-		this.rimtrackClient = new DBInteraction(prop.getProperty("RIM_TRACK_CLIENT_URL"),
-				prop.getProperty("RIM_TRACK_CLIENT_USERNAME"), prop.getProperty("RIM_TRACK_CLIENT_PASSWORD"));
+		this.rimtrackTenant = new DBInteraction(dbProperties.getTenantDbUrl() + dbProperties.getTenantDbName(),
+				dbProperties.getTenantDbUsername(), dbProperties.getTenantDbPassword());
 
-		if (input != null) {
-			try {
-				input.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	public ResultSet getLastBruteTrame(int deviceId) throws SQLException {
-//		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId
-//				+ " and last_time > DATE_SUB(now(),INTERVAL " + MAX_FRAMES_LATENCY
-//				+ " SECOND) and last_time <= CAST(now() as datetime) LIMIT 1000";
-		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId
-				+ " LIMIT 1000";
+		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId + " LIMIT 1000";
 		this.rimtrackRaw.connect();
 		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
 		return bruteTrames;
@@ -224,6 +202,26 @@ public class RealTimeDAO {
 		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
 		System.out.println(selectRequest);
 		return bruteTrames;
+	}
+
+	public DBInteraction newClientConnexion(String dbName, String dbUrl, String dbUsername, String dbPassword) {
+		DBInteraction rimtrackClient = new DBInteraction(dbUrl + dbName, dbUsername, dbPassword);
+		this.rimtrackClient = rimtrackClient;
+		return rimtrackClient;
+	}
+
+	public ResultSet findTenants() throws SQLException {
+		String selectRequest = "SELECT * FROM `user` WHERE enabled = 1";
+		this.rimtrackTenant.connect();
+		ResultSet tenants = this.rimtrackTenant.select(selectRequest);
+		return tenants;
+	}
+
+	public ResultSet findDevices(DBInteraction clientConnexion) throws SQLException {
+		String selectRequest = "SELECT * FROM `device`";
+		clientConnexion.connect();
+		ResultSet devices = clientConnexion.select(selectRequest);
+		return devices;
 	}
 
 	public void closeConnecions() {
