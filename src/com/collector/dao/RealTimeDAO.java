@@ -19,11 +19,11 @@ public class RealTimeDAO {
 
 	public RealTimeDAO(DbProperties dbProperties) throws IOException {
 
-		this.rimtrackRaw = new DBInteraction(dbProperties.getRawDbUrl()+dbProperties.getRawDbName(), dbProperties.getRawDbUsername(),
-				dbProperties.getRawDbPassword());
+		this.rimtrackRaw = new DBInteraction(dbProperties.getRawDbUrl() + dbProperties.getRawDbName(),
+				dbProperties.getRawDbUsername(), dbProperties.getRawDbPassword());
 
-		this.rimtrackClient = new DBInteraction(dbProperties.getClientDbUrl()+dbProperties.getClientDbName(), dbProperties.getClientDbUsername(),
-				dbProperties.getClientDbPassword());
+		this.rimtrackClient = new DBInteraction(dbProperties.getClientDbUrl() + dbProperties.getClientDbName(),
+				dbProperties.getClientDbUsername(), dbProperties.getClientDbPassword());
 
 		this.rimtrackTenant = new DBInteraction(dbProperties.getTenantDbUrl() + dbProperties.getTenantDbName(),
 				dbProperties.getTenantDbUsername(), dbProperties.getTenantDbPassword());
@@ -34,6 +34,7 @@ public class RealTimeDAO {
 		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId + " LIMIT 1000";
 		this.rimtrackRaw.connect();
 		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
+		// System.out.println(selectRequest);
 		return bruteTrames;
 	}
 
@@ -42,31 +43,30 @@ public class RealTimeDAO {
 		String insertRequest = "";
 
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
-			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,vertical,horizontal,speed,fuel,temperature,validity,ignition,status,type)"
+			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,speed,fuel,temperature,validity,ignition,status,type)"
 					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
 					+ realTimeRecord.getCoordinate().getLatitude() + "," + realTimeRecord.getCoordinate().getLongitude()
-					+ ",'" + realTimeRecord.getVertical() + "','" + realTimeRecord.getHorizontal() + "',"
-					+ realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ",'"
+					+ "," + realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ",'"
 					+ realTimeRecord.getTemperature() + "'," + realTimeRecord.isValidity() + ","
 					+ realTimeRecord.isIgnition() + ",'" + realTimeRecord.getRealTimeRecordStatus() + "','"
 					+ realTimeRecord.getRecordType() + "')";
 		}
 
 		if (realTimeRecord.getRecordType() == RecordType.AA) {
-			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,vertical,horizontal,speed,fuel,temperature,validity,ignition,status,type,power,mems_x, mems_y, mems_z,sendFlag,satInView)"
+			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,speed,fuel,`signal`,temperature,validity,ignition,status,type,power,mems_x, mems_y, mems_z,send_flag,sat_in_view)"
 					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
 					+ realTimeRecord.getCoordinate().getLatitude() + "," + realTimeRecord.getCoordinate().getLongitude()
-					+ ",'" + realTimeRecord.getVertical() + "','" + realTimeRecord.getHorizontal() + "',"
-					+ realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ",'"
-					+ realTimeRecord.getTemperature() + "'," + realTimeRecord.isValidity() + ","
-					+ realTimeRecord.isIgnition() + ",'" + realTimeRecord.getRealTimeRecordStatus() + "','"
-					+ realTimeRecord.getRecordType() + "'," + realTimeRecord.getPower() + ","
-					+ realTimeRecord.getMems_x() + "," + realTimeRecord.getMems_y() + "," + realTimeRecord.getMems_z()
-					+ "," + realTimeRecord.getSendFlag() + "," + realTimeRecord.getSatInView() + ")";
+					+ "," + realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ","
+					+ realTimeRecord.getSignal() + ",'" + realTimeRecord.getTemperature() + "',"
+					+ realTimeRecord.isValidity() + "," + realTimeRecord.isIgnition() + ",'"
+					+ realTimeRecord.getRealTimeRecordStatus() + "','" + realTimeRecord.getRecordType() + "',"
+					+ realTimeRecord.getPower() + "," + realTimeRecord.getMems_x() + "," + realTimeRecord.getMems_y()
+					+ "," + realTimeRecord.getMems_z() + "," + realTimeRecord.getSendFlag() + ","
+					+ realTimeRecord.getSatInView() + ")";
 		}
 
+		// System.out.println(insertRequest);
 		this.rimtrackClient.connect();
-		System.out.println(insertRequest);
 		boolean isPersisted = this.rimtrackClient.MAJ(insertRequest) != 0 ? true : false;
 		return isPersisted;
 	}
@@ -76,8 +76,7 @@ public class RealTimeDAO {
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
 			updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
 					+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
-					+ realTimeRecord.getCoordinate().getLongitude() + ", vertical = '" + realTimeRecord.getVertical()
-					+ "', horizontal = '" + realTimeRecord.getHorizontal() + "', speed = " + realTimeRecord.getSpeed()
+					+ realTimeRecord.getCoordinate().getLongitude() + ", speed = " + realTimeRecord.getSpeed()
 					+ ", fuel = " + realTimeRecord.getFuel() + ", temperature = '" + realTimeRecord.getTemperature()
 					+ "', validity = " + realTimeRecord.isValidity() + " ,ignition = " + realTimeRecord.isIgnition()
 					+ ",status = '" + realTimeRecord.getRealTimeRecordStatus() + "' where deviceid = "
@@ -87,18 +86,16 @@ public class RealTimeDAO {
 		if (realTimeRecord.getRecordType() == RecordType.AA) {
 			updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
 					+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
-					+ realTimeRecord.getCoordinate().getLongitude() + ", vertical = '" + realTimeRecord.getVertical()
-					+ "', horizontal = '" + realTimeRecord.getHorizontal() + "', speed = " + realTimeRecord.getSpeed()
+					+ realTimeRecord.getCoordinate().getLongitude() + ", speed = " + realTimeRecord.getSpeed()
 					+ ", fuel = " + realTimeRecord.getFuel() + ", temperature = '" + realTimeRecord.getTemperature()
 					+ "', validity = " + realTimeRecord.isValidity() + " ,ignition = " + realTimeRecord.isIgnition()
 					+ ",status = '" + realTimeRecord.getRealTimeRecordStatus() + "' ,power = "
-					+ realTimeRecord.getPower() + " ,mems_x = " + realTimeRecord.getMems_x() + " ,mems_y = "
-					+ realTimeRecord.getMems_y() + " ,mems_z = " + realTimeRecord.getMems_z() + " ,sendFlag = "
-					+ realTimeRecord.getSendFlag() + " ,satInView = " + realTimeRecord.getSatInView()
-					+ " where deviceid = " + realTimeRecord.getDeviceId();
+					+ realTimeRecord.getPower() + ",`signal` = " + realTimeRecord.getSignal() + " ,mems_x = "
+					+ realTimeRecord.getMems_x() + " ,mems_y = " + realTimeRecord.getMems_y() + " ,mems_z = "
+					+ realTimeRecord.getMems_z() + " ,send_flag = " + realTimeRecord.getSendFlag() + " ,sat_in_view = "
+					+ realTimeRecord.getSatInView() + " where deviceid = " + realTimeRecord.getDeviceId();
 		}
-
-		System.out.println(updateRequest);
+		//System.out.println(updateRequest);
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
 		return isPersisted;
@@ -107,7 +104,6 @@ public class RealTimeDAO {
 	public boolean updateRealTimeRecordStatus(long deviceId, RealTimeRecordStatus RealTimeRecordStatus) {
 		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus + "' where deviceid = "
 				+ deviceId;
-		System.out.println(updateRequest);
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
 		return isPersisted;
@@ -117,7 +113,6 @@ public class RealTimeDAO {
 		String selectRequest = "SELECT * FROM real_time_dev WHERE deviceid = " + deviceId + " LIMIT 1";
 		this.rimtrackClient.connect();
 		ResultSet bruteTrames = this.rimtrackClient.select(selectRequest);
-		System.out.println(selectRequest);
 		return bruteTrames;
 	}
 
@@ -171,8 +166,8 @@ public class RealTimeDAO {
 				record.setMems_x(realTimeRecordResultSSet.getInt("mems_x"));
 				record.setMems_y(realTimeRecordResultSSet.getInt("mems_y"));
 				record.setMems_z(realTimeRecordResultSSet.getInt("mems_z"));
-				record.setSendFlag(realTimeRecordResultSSet.getInt("sendFlag"));
-				record.setSatInView(realTimeRecordResultSSet.getInt("satInView"));
+				record.setSendFlag(realTimeRecordResultSSet.getInt("send_flag"));
+				record.setSatInView(realTimeRecordResultSSet.getInt("sat_in_view"));
 				record.setSignal(realTimeRecordResultSSet.getInt("signal"));
 
 				RealTimeRecordStatus status = null;
@@ -192,7 +187,6 @@ public class RealTimeDAO {
 			}
 		}
 		this.rimtrackClient.disconnect();
-		// System.out.println(selectRequest);
 		return record;
 	}
 
@@ -200,7 +194,6 @@ public class RealTimeDAO {
 		String selectRequest = "";
 		this.rimtrackClient.connect();
 		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
-		System.out.println(selectRequest);
 		return bruteTrames;
 	}
 

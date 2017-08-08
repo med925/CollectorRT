@@ -66,4 +66,17 @@ public class DBInteraction {
 		}
 		return false;
 	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
 }
