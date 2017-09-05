@@ -61,7 +61,7 @@ public class Decoder {
 	}
 
 	public static boolean isValidAATrame(String line) {
-		if (line.length() == 74 /* || line.length() == 104 */) {
+		if (line.length() == 74  /*|| line.length() == 104 */) {
 			return true;
 		} else {
 			return false;

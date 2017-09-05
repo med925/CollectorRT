@@ -14,6 +14,7 @@ import com.collector.model.Device;
 import com.collector.model.Record;
 import com.collector.model.Tenant;
 import com.collector.model.type.RealTimeRecordStatus;
+import com.collector.model.type.RecordType;
 import com.collector.service.Decoder;
 import com.collector.service.TenantService;
 import com.collector.validation.CheckIntegity;
@@ -80,7 +81,8 @@ public class ClientWorker implements Runnable {
 
 						oldRecord = realTimeDAO.getLastRealTimeRecords(deviceId);
 						ResultSet rs = realTimeDAO.getLastBruteTrame(deviceId);
-						System.out.println("old tram time : " + oldRecord.getRecordTime());
+						if(oldRecord!=null)System.out.println("old tram time : " + oldRecord.getRecordTime());
+						else System.out.println("old tram is null !");
 						if (rs.next()) {
 							bruteTrame = rs.getString("last_trame");
 							if (bruteTrame.length() > 6) {
@@ -104,13 +106,25 @@ public class ClientWorker implements Runnable {
 											&& CheckIntegity.isValidSpeed(newRecord.getSpeed(), MAX_SPEED, 0)
 											&& CheckIntegity.isValidRealDate(newRecord.getRecordTime(),
 													MAX_FRAMES_LATENCY)) {
+										
 										newRecord.setRealTimeRecordStatus(RealTimeRecordStatus.VALID);
 										isValidTrame = true;
 										//System.out.println("GOOD TRAME ! ==> [UPDATE OLD RECORD]");
 										System.out.println("tram time is valid: "+newRecord.getRecordTime());
 										if (!realTimeDAO.updateRealTimeRecord(newRecord))
 											realTimeDAO.addRealTimeRecord(newRecord);
+										
+										/*
+										if(CheckIntegity.isValidRealDate(newRecord.getRecordTime(),
+													MAX_FRAMES_LATENCY)){
+
+										}else if(oldRecord == null)
+											realTimeDAO.addRealTimeRecord(newRecord);*/
+										
+										
+										
 									} else {
+										
 										isValidTrame = false;
 										//System.out.println("NO DATA ! ==> [CHECK VALIDITY]");
 										System.out.println("tram time invalid: "+newRecord.getRecordTime());
@@ -128,6 +142,14 @@ public class ClientWorker implements Runnable {
 									}
 
 								} else {
+									
+									if(oldRecord == null){
+										Record emptyRecord = new Record();
+										emptyRecord.setDeviceId(deviceId);
+										emptyRecord.setRecordType(RecordType.AA);
+										realTimeDAO.addRealTimeRecord(emptyRecord);
+									}
+									
 									isValidTrame = false;
 									//System.out.println("NOT VALID TRAME ! ==> [CHECK VALIDITY]");
 									System.out.println("invalid tram: ");

@@ -1,6 +1,7 @@
 package com.collector.model;
 
 import java.sql.Timestamp;
+import java.util.Date;
 
 import com.collector.model.type.Point;
 import com.collector.model.type.PointCardinal;
@@ -38,7 +39,22 @@ public class Record {
 	private RecordType recordType;
 
 	public Record() {
-		super();
+		java.util.Date date=new Date();
+		this.recordTime = new Timestamp(date.getTime());
+		this.coordinate= new Point(0,0);
+		this.vertical = PointCardinal.EST;
+		this.horizontal=PointCardinal.SUD;
+		this.validity = false;
+		this.ignition = false;
+		this.RealTimeRecordStatus = com.collector.model.type.RealTimeRecordStatus.VALID;
+		this.mems_x = 0;
+		this.mems_y = 0;
+		this.mems_z = 0;
+		this.power = 0;
+		this.sendFlag = 0;
+		this.satInView = 10;
+		this.signal = 10;
+//		super();
 	}
 
 	// GPRMC RECORD
