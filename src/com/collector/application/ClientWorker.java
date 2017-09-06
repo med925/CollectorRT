@@ -85,7 +85,7 @@ public class ClientWorker implements Runnable {
 						else System.out.println("old tram is null !");
 						if (rs.next()) {
 							bruteTrame = rs.getString("last_trame");
-							if (bruteTrame.length() > 6) {
+							if (bruteTrame!= null && bruteTrame.length() > 6) {
 
 								if (bruteTrame.substring(0, 2).equals("AA")) {
 									if (Decoder.isValidAATrame(bruteTrame)) {
@@ -112,17 +112,7 @@ public class ClientWorker implements Runnable {
 										//System.out.println("GOOD TRAME ! ==> [UPDATE OLD RECORD]");
 										System.out.println("tram time is valid: "+newRecord.getRecordTime());
 										if (!realTimeDAO.updateRealTimeRecord(newRecord))
-											realTimeDAO.addRealTimeRecord(newRecord);
-										
-										/*
-										if(CheckIntegity.isValidRealDate(newRecord.getRecordTime(),
-													MAX_FRAMES_LATENCY)){
-
-										}else if(oldRecord == null)
-											realTimeDAO.addRealTimeRecord(newRecord);*/
-										
-										
-										
+											realTimeDAO.addRealTimeRecord(newRecord);	
 									} else {
 										
 										isValidTrame = false;
@@ -167,12 +157,6 @@ public class ClientWorker implements Runnable {
 								}
 							}
 						}
-
-						//System.out.println("OLD RECORD : " + oldRecord);
-						//System.out.println("NEW RECORD : " + newRecord);
-
-//						if (isValidTrame)
-//							AlertProcess.alertProcess(newRecord);
 
 						oldRecord = null;
 						newRecord = null;
