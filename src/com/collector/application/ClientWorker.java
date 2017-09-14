@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -57,6 +58,9 @@ public class ClientWorker implements Runnable {
 
 			for (;;) {
 
+				/**
+				 * load tenant after every 5 exe !
+				 * */
 				if (numberOfAttempts == 0) {
 					tenants = tenantService.loadTenants();
 					numberOfAttempts++;
@@ -66,7 +70,8 @@ public class ClientWorker implements Runnable {
 
 				for (Tenant tenant : tenants) {
 
-					System.out.println("processing tenant: "+tenant.getUsername());
+					System.out.println("=========================================================================");
+					System.out.println("processing tenant: " + tenant.getUsername() + " at " + new Date());
 
 					realTimeDAO.newClientConnexion(dbProperties.getUserDbName() + tenant.getId(),
 							dbProperties.getUserDbUrl(), dbProperties.getUserDbUsername(),
@@ -74,25 +79,32 @@ public class ClientWorker implements Runnable {
 
 					for (Device device : tenant.getDevices()) {
 
-						System.out.println("device: "+device.getId());
+						System.out.println("device: " + device.getId());
 
 						deviceId = device.getId();
-						//System.out.println("=== task start at " + new Date() + " for the boitier " + deviceId + " ===");
 
 						oldRecord = realTimeDAO.getLastRealTimeRecords(deviceId);
 						ResultSet rs = realTimeDAO.getLastBruteTrame(deviceId);
-						if(oldRecord!=null)System.out.println("old tram time : " + oldRecord.getRecordTime());
-						else System.out.println("old tram is null !");
+						if (oldRecord != null)
+							System.out.println("old tram time : " + oldRecord.getRecordTime());
+						else
+							System.out.println("old tram is null !");
 						if (rs.next()) {
 							bruteTrame = rs.getString("last_trame");
-							if (bruteTrame!= null && bruteTrame.length() > 6) {
+							if (bruteTrame != null && bruteTrame.length() > 6) {
 
+								/**
+								 * Decode AA trame
+								 * */
 								if (bruteTrame.substring(0, 2).equals("AA")) {
 									if (Decoder.isValidAATrame(bruteTrame)) {
 										newRecord = Decoder.decodeAALine(bruteTrame);
 										newRecord.setDeviceId(deviceId);
 									}
 								}
+								/**
+								 * Decode GPRMC trame
+								 * */
 								if (bruteTrame.substring(0, 6).equals("$GPRMC")) {
 									if (Decoder.isValidGPRMCTrame(bruteTrame)) {
 										newRecord = Decoder.decodeGPRMCLine(bruteTrame);
@@ -106,18 +118,17 @@ public class ClientWorker implements Runnable {
 											&& CheckIntegity.isValidSpeed(newRecord.getSpeed(), MAX_SPEED, 0)
 											&& CheckIntegity.isValidRealDate(newRecord.getRecordTime(),
 													MAX_FRAMES_LATENCY)) {
-										
+
 										newRecord.setRealTimeRecordStatus(RealTimeRecordStatus.VALID);
 										isValidTrame = true;
-										//System.out.println("GOOD TRAME ! ==> [UPDATE OLD RECORD]");
-										System.out.println("tram time is valid: "+newRecord.getRecordTime());
+										System.out.println(
+												"valid trame (update/add record): " + newRecord.getRecordTime());
 										if (!realTimeDAO.updateRealTimeRecord(newRecord))
-											realTimeDAO.addRealTimeRecord(newRecord);	
+											realTimeDAO.addRealTimeRecord(newRecord);
 									} else {
-										
+
 										isValidTrame = false;
-										//System.out.println("NO DATA ! ==> [CHECK VALIDITY]");
-										System.out.println("tram time invalid: "+newRecord.getRecordTime());
+										System.out.println("tram invalid !");
 										int state = CheckIntegity.validityOfState(oldRecord,
 												MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE, MAX_FRAMES_LATENCY_IN_STOP_CASE,
 												DURATION_OF_NON_VALIDITY, DURATION_OF_TECHNICAL_ISSUE);
@@ -132,17 +143,16 @@ public class ClientWorker implements Runnable {
 									}
 
 								} else {
-									
-									if(oldRecord == null){
+
+									if (oldRecord == null) {
 										Record emptyRecord = new Record();
 										emptyRecord.setDeviceId(deviceId);
 										emptyRecord.setRecordType(RecordType.AA);
 										realTimeDAO.addRealTimeRecord(emptyRecord);
 									}
-									
+
 									isValidTrame = false;
-									//System.out.println("NOT VALID TRAME ! ==> [CHECK VALIDITY]");
-									System.out.println("invalid tram: ");
+									System.out.println("invalid tram !");
 									int state = CheckIntegity.validityOfState(oldRecord,
 											MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE, MAX_FRAMES_LATENCY_IN_STOP_CASE,
 											DURATION_OF_NON_VALIDITY, DURATION_OF_TECHNICAL_ISSUE);
@@ -178,7 +188,7 @@ public class ClientWorker implements Runnable {
 		}
 
 	}
-	
+
 	public void loadRtConfig() {
 		Properties prop = new Properties();
 		InputStream input = null;
@@ -193,11 +203,16 @@ public class ClientWorker implements Runnable {
 			if (input != null) {
 				try {
 					this.DURATION_OF_NON_VALIDITY = Integer.parseInt(prop.getProperty("DURATION_OF_NON_VALIDITY"));
-					this.DURATION_MAX_OF_NON_VALIDITY = Integer.parseInt(prop.getProperty("DURATION_MAX_OF_NON_VALIDITY"));
-					this.DURATION_OF_TECHNICAL_ISSUE = Integer.parseInt(prop.getProperty("DURATION_OF_TECHNICAL_ISSUE"));
-					this.DURATION_MAX_OF_TECHNICAL_ISSUE = Integer.parseInt(prop.getProperty("DURATION_MAX_OF_TECHNICAL_ISSUE"));
-					this.MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE = Integer.parseInt(prop.getProperty("MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE"));
-					this.MAX_FRAMES_LATENCY_IN_STOP_CASE = Integer.parseInt(prop.getProperty("MAX_FRAMES_LATENCY_IN_STOP_CASE"));
+					this.DURATION_MAX_OF_NON_VALIDITY = Integer
+							.parseInt(prop.getProperty("DURATION_MAX_OF_NON_VALIDITY"));
+					this.DURATION_OF_TECHNICAL_ISSUE = Integer
+							.parseInt(prop.getProperty("DURATION_OF_TECHNICAL_ISSUE"));
+					this.DURATION_MAX_OF_TECHNICAL_ISSUE = Integer
+							.parseInt(prop.getProperty("DURATION_MAX_OF_TECHNICAL_ISSUE"));
+					this.MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE = Integer
+							.parseInt(prop.getProperty("MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE"));
+					this.MAX_FRAMES_LATENCY_IN_STOP_CASE = Integer
+							.parseInt(prop.getProperty("MAX_FRAMES_LATENCY_IN_STOP_CASE"));
 					this.MAX_SPEED = Integer.parseInt(prop.getProperty("MAX_SPEED"));
 					this.FREQUENCY_EXECUTION = Integer.parseInt(prop.getProperty("FREQUENCY_EXECUTION"));
 					this.MAX_FRAMES_LATENCY = Integer.parseInt(prop.getProperty("MAX_FRAMES_LATENCY"));

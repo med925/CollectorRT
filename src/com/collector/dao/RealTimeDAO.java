@@ -53,7 +53,7 @@ public class RealTimeDAO {
 		}
 
 		if (realTimeRecord.getRecordType() == RecordType.AA) {
-			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,speed,fuel,`signal`,temperature,validity,ignition,status,type,power,mems_x, mems_y, mems_z,send_flag,sat_in_view)"
+			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,speed,fuel,`signal`,temperature,validity,ignition,status,type,power,mems_x, mems_y, mems_z,send_flag,sat_in_view,rotation_angle)"
 					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
 					+ realTimeRecord.getCoordinate().getLatitude() + "," + realTimeRecord.getCoordinate().getLongitude()
 					+ "," + realTimeRecord.getSpeed() + "," + realTimeRecord.getFuel() + ","
@@ -62,7 +62,7 @@ public class RealTimeDAO {
 					+ realTimeRecord.getRealTimeRecordStatus() + "','" + realTimeRecord.getRecordType() + "',"
 					+ realTimeRecord.getPower() + "," + realTimeRecord.getMems_x() + "," + realTimeRecord.getMems_y()
 					+ "," + realTimeRecord.getMems_z() + "," + realTimeRecord.getSendFlag() + ","
-					+ realTimeRecord.getSatInView() + ")";
+					+ realTimeRecord.getSatInView() +","+realTimeRecord.getRotationAngle()+ ")";
 		}
 
 		// System.out.println(insertRequest);
@@ -93,7 +93,7 @@ public class RealTimeDAO {
 					+ realTimeRecord.getPower() + ",`signal` = " + realTimeRecord.getSignal() + " ,mems_x = "
 					+ realTimeRecord.getMems_x() + " ,mems_y = " + realTimeRecord.getMems_y() + " ,mems_z = "
 					+ realTimeRecord.getMems_z() + " ,send_flag = " + realTimeRecord.getSendFlag() + " ,sat_in_view = "
-					+ realTimeRecord.getSatInView() + " where deviceid = " + realTimeRecord.getDeviceId();
+					+ realTimeRecord.getSatInView() + ",rotation_angle ="+realTimeRecord.getRotationAngle()+" where deviceid = " + realTimeRecord.getDeviceId();
 		}
 		//System.out.println(updateRequest);
 		this.rimtrackClient.connect();

@@ -22,7 +22,7 @@ public class CheckIntegity {
 	}
 
 	public static boolean isValidRealDate(Timestamp recordTime, int intervalInSecond) {
-		//float now = new Date().getTime() - 3600000;
+		// float now = new Date().getTime() - 3600000;
 		float now = new Date().getTime();
 		if ((recordTime.getTime() <= now) && (recordTime.getTime() >= (now - intervalInSecond * 1000)))
 			return true;
@@ -40,10 +40,10 @@ public class CheckIntegity {
 			Timestamp timestampOfLastRealTimeRecord = oldRecord.getRecordTime();
 			int speedOfLastRealTimeRecord = oldRecord.getSpeed();
 			RealTimeRecordStatus stateOfLastRealTimeRecord = oldRecord.getRealTimeRecordStatus();
-
-			System.out.println("SPEED OF LAST REAL TRAME : " + speedOfLastRealTimeRecord);
-			System.out.println("STATUS OF LAST REAL TRAME : " + stateOfLastRealTimeRecord);
-			System.out.println("TIME OF LAST REAL TRAME : " + timestampOfLastRealTimeRecord.getTime());
+			System.out.println("Check validity process start");
+			System.out.println("speed LT : " + speedOfLastRealTimeRecord);
+			System.out.println("status LT : " + stateOfLastRealTimeRecord);
+			System.out.println("time LT : " + timestampOfLastRealTimeRecord.getTime());
 
 			float numberOfSecondBetweenNowAndTimeOfLastTrame = new Date().getTime() - 3600000
 					- timestampOfLastRealTimeRecord.getTime();
@@ -58,9 +58,6 @@ public class CheckIntegity {
 					? MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE : MAX_FRAMES_LATENCY_IN_STOP_CASE)
 					+ DURATION_OF_TECHNICAL_ISSUE;
 
-			System.out.println("DURATION_MAX_OF_NON_VALIDITY : " + DURATION_MAX_OF_NON_VALIDITY / 60000 + " min");
-			System.out.println("DURATION_MAX_OF_TECHNICAL_ISSUE : " + DURATION_MAX_OF_TECHNICAL_ISSUE / 60000 + " min");
-
 			if ((numberOfSecondBetweenNowAndTimeOfLastTrame >= DURATION_MAX_OF_NON_VALIDITY)
 					&& (numberOfSecondBetweenNowAndTimeOfLastTrame < DURATION_OF_TECHNICAL_ISSUE)
 					&& !(stateOfLastRealTimeRecord.equals(RealTimeRecordStatus.NON_VALID))) {
@@ -73,6 +70,8 @@ public class CheckIntegity {
 				System.out.println("THERE IS TECHNICAL ISSUE HERE !");
 				state = -1;
 			}
+			
+			System.out.println("Check validity process stop");
 
 		} catch (Exception e) {
 
