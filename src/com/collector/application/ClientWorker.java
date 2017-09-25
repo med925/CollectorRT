@@ -59,14 +59,14 @@ public class ClientWorker implements Runnable {
 			for (;;) {
 
 				/**
-				 * load tenant after every 5 exe !
+				 * load tenant after every 15 exe !
 				 * */
 				if (numberOfAttempts == 0) {
 					System.out.println("==================================================================");
 					System.out.println("======= load tenant===========");
 					System.out.println("==================================================================");
 					tenants = tenantService.loadTenants();
-				}else if (numberOfAttempts == 5)
+				}else if (numberOfAttempts == 15)
 					numberOfAttempts = -1;
 
 				numberOfAttempts++;

@@ -28,8 +28,8 @@ public class TenantService {
 			ResultSet result = realTimeDAO.findTenants();
 			List<Tenant> tenants = new ArrayList<>();
 			while (result.next()) {
-				Tenant tenant = new Tenant(result.getInt("id"));
-				tenant.setUsername(result.getString("username"));
+				Tenant tenant = new Tenant(result.getInt("compte_web_id"));
+				tenant.setUsername(result.getString("login"));
 				tenant.setPassword(result.getString("password"));
 				this.loadDevices(tenant);
 				tenants.add(tenant);

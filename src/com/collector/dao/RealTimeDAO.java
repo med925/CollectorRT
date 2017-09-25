@@ -204,7 +204,7 @@ public class RealTimeDAO {
 	}
 
 	public ResultSet findTenants() throws SQLException {
-		String selectRequest = "SELECT * FROM `user` WHERE enabled = 1";
+		String selectRequest = "SELECT * FROM `user`";
 		this.rimtrackTenant.connect();
 		ResultSet tenants = this.rimtrackTenant.select(selectRequest);
 		return tenants;
