@@ -58,6 +58,9 @@ public class ClientWorker implements Runnable {
 
 			for (;;) {
 
+				try {
+					
+
 				/**
 				 * load tenant after every 15 exe !
 				 * */
@@ -180,13 +183,15 @@ public class ClientWorker implements Runnable {
 				}
 				realTimeDAO.closeConnecions();
 				Thread.sleep(FREQUENCY_EXECUTION * 1000);
+				} catch (Exception e) {
+					continue; 
+				}finally {
+					System.gc();
+				}
+				// end for
 			}
 
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (SQLException e1) {
-			e1.printStackTrace();
-		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
