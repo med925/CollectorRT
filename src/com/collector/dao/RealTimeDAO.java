@@ -34,7 +34,6 @@ public class RealTimeDAO {
 		String selectRequest = "SELECT * FROM `list_last` WHERE id_boitier = " + deviceId + " LIMIT 1000";
 		this.rimtrackRaw.connect();
 		ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
-		// System.out.println(selectRequest);
 		return bruteTrames;
 	}
 
@@ -198,9 +197,8 @@ public class RealTimeDAO {
 	}
 
 	public DBInteraction newClientConnexion(String dbName, String dbUrl, String dbUsername, String dbPassword) {
-		DBInteraction rimtrackClient = new DBInteraction(dbUrl + dbName, dbUsername, dbPassword);
-		this.rimtrackClient = rimtrackClient;
-		return rimtrackClient;
+		this.rimtrackClient = new DBInteraction(dbUrl + dbName, dbUsername, dbPassword);
+		return this.rimtrackClient;
 	}
 
 	public ResultSet findTenants() throws SQLException {
@@ -210,10 +208,10 @@ public class RealTimeDAO {
 		return tenants;
 	}
 
-	public ResultSet findDevices(DBInteraction clientConnexion) throws SQLException {
+	public ResultSet findDevices(int id) throws SQLException {
 		String selectRequest = "SELECT * FROM `device`";
-		clientConnexion.connect();
-		ResultSet devices = clientConnexion.select(selectRequest);
+		this.rimtrackClient.connect();
+		ResultSet devices = this.rimtrackClient.select(selectRequest);
 		return devices;
 	}
 

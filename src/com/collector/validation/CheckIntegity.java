@@ -23,7 +23,7 @@ public class CheckIntegity {
 
 	public static boolean isValidRealDate(Timestamp recordTime, int intervalInSecond) {
 		// float now = new Date().getTime() - 3600000;
-		float now = new Date().getTime();
+		float now = new Date().getTime() - 3600000;
 		if ((recordTime.getTime() <= now) && (recordTime.getTime() >= (now - intervalInSecond * 1000)))
 			return true;
 		else

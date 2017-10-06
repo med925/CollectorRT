@@ -31,7 +31,8 @@ public class TenantService {
 				Tenant tenant = new Tenant(result.getInt("compte_web_id"));
 				tenant.setUsername(result.getString("login"));
 				tenant.setPassword(result.getString("password"));
-				this.loadDevices(tenant);
+				//this.loadDevices(tenant);
+				tenant.setDevices(this.loadDevices(tenant.getId()));
 				tenants.add(tenant);
 			}
 			return tenants;
@@ -41,13 +42,30 @@ public class TenantService {
 		return null;
 	}
 
+	public Vector<Device> loadDevices(int tenantId) {
+		Vector<Device> devices = new Vector<>();
+		realTimeDAO.newClientConnexion(this.dbProperties.getUserDbName() + tenantId, this.dbProperties.getUserDbUrl(),
+				this.dbProperties.getUserDbUsername(), this.dbProperties.getUserDbPassword());
+		try {
+			ResultSet result = realTimeDAO.findDevices(tenantId);
+			while (result.next()) {
+				Device device = new Device(result.getInt("id_device"));
+				devices.add(device);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return devices;
+	}
+
 	public void loadDevices(Tenant tenant) {
 		Vector<Device> devices = new Vector<>();
-		DBInteraction connexion = realTimeDAO.newClientConnexion(this.dbProperties.getUserDbName() + tenant.getId(),
+		realTimeDAO.newClientConnexion(this.dbProperties.getUserDbName() + tenant.getId(),
 				this.dbProperties.getUserDbUrl(), this.dbProperties.getUserDbUsername(),
 				this.dbProperties.getUserDbPassword());
 		try {
-			ResultSet result = realTimeDAO.findDevices(connexion);
+			ResultSet result = realTimeDAO.findDevices(tenant.getId());
 			while (result.next()) {
 				Device device = new Device(result.getInt("id_device"));
 				devices.add(device);
