@@ -7,6 +7,7 @@ public class DBInteraction {
 	static Connection con;
 	static Statement st;
 	ResultSet res;
+	
 	private String url;
 	private String username;
 	private String password;
@@ -77,6 +78,42 @@ public class DBInteraction {
 
 	public String getPassword() {
 		return password;
+	}
+
+	public static Connection getCon() {
+		return con;
+	}
+
+	public static void setCon(Connection con) {
+		DBInteraction.con = con;
+	}
+
+	public static Statement getSt() {
+		return st;
+	}
+
+	public static void setSt(Statement st) {
+		DBInteraction.st = st;
+	}
+
+	public ResultSet getRes() {
+		return res;
+	}
+
+	public void setRes(ResultSet res) {
+		this.res = res;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 }

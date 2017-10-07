@@ -3,20 +3,17 @@ package com.collector.application;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
 import com.collector.dao.RealTimeDAO;
 import com.collector.model.DbProperties;
-import com.collector.model.Device;
 import com.collector.model.Record;
 import com.collector.model.Tenant;
 import com.collector.model.type.RealTimeRecordStatus;
 import com.collector.model.type.RecordType;
 import com.collector.service.Decoder;
-import com.collector.service.TenantService;
 import com.collector.validation.CheckIntegity;
 
 public class ClientWorker implements Runnable {
@@ -43,15 +40,11 @@ public class ClientWorker implements Runnable {
 			DbProperties dbProperties = new DbProperties();
 			dbProperties.load();
 			loadRtConfig();
-			//RealTimeDAO realTimeDAO = new RealTimeDAO(dbProperties);
-			TenantService tenantService = new TenantService(dbProperties);
-			tenantService.realTimeDAO= new RealTimeDAO(dbProperties);
-			
+			RealTimeDAO realTimeDAO = new RealTimeDAO(dbProperties);
+
 			String bruteTrame = null;
 			Record newRecord = null;
 			Record oldRecord = null;
-			int deviceId = 0;
-			boolean isValidTrame = true;
 
 			int numberOfAttempts = 0;
 			List<Tenant> tenants = null;
@@ -59,149 +52,145 @@ public class ClientWorker implements Runnable {
 			for (;;) {
 
 				try {
-
 					/**
 					 * load tenant after every 15 exe !
 					 */
 					if (numberOfAttempts == 0) {
-						System.out.println("==================================================================");
-						System.out.println("======= load tenant===========");
-						System.out.println("==================================================================");
-						tenants = tenantService.loadTenants();
+						System.out.println("===========================================================");
+						System.out.println("======= load tenant ==========");
+						System.out.println("===========================================================");
+						tenants = realTimeDAO.getAllTenants();
+
+						if (tenants != null)
+							System.out.println("number of tenants id " + tenants.size());
+
 					} else if (numberOfAttempts == 15)
 						numberOfAttempts = -1;
 
 					numberOfAttempts++;
 
 					for (Tenant tenant : tenants) {
-//						if (tenant.getId() == 23) {
-							System.out.println(
-									"=========================================================================");
-							System.out.println("processing tenant: " + tenant.getUsername() + " at " + new Date());
+						try {
 
-							tenantService.realTimeDAO.newClientConnexion(dbProperties.getUserDbName() + tenant.getId(),
-									dbProperties.getUserDbUrl(), dbProperties.getUserDbUsername(),
-									dbProperties.getUserDbPassword());
+							System.out.println("=================================");
+							System.out.println("processing " + tenant + " at " + new Date());
 
-							if (tenant.getDevices() != null && tenant.getDevices().size() > 0)
-								System.out.println(tenant.getDevices().get(0).getId() + " - "
-										+ tenant.getDevices().get(tenant.getDevices().size() - 1).getId());
+							for (Long device : tenant.getDevices()) {
+								System.out.println(" * device: " + device);
 
-							for (Device device : tenant.getDevices()) {
+								/**
+								 * ref the last RT record of the current client
+								 * !
+								 */
+								oldRecord = realTimeDAO.getLastRealTimeRecord(tenant.getId(), device);
 
-								System.out.println("device: " + device.getId());
+								/** ref to the newest brute trame ! */
+								bruteTrame = realTimeDAO.getLastBruteTrame(device);
 
-								deviceId = device.getId();
-
-								oldRecord = tenantService.realTimeDAO.getLastRealTimeRecords(deviceId);
-								ResultSet rs = tenantService.realTimeDAO.getLastBruteTrame(deviceId);
-								if (oldRecord != null)
-									System.out.println("old tram time : " + oldRecord.getRecordTime());
-								else
-									System.out.println("old tram is null !");
-								if (rs.next()) {
-									bruteTrame = rs.getString("last_trame");
-									if (bruteTrame != null && bruteTrame.length() > 6) {
-
-										/**
-										 * Decode AA trame
-										 */
-										if (bruteTrame.substring(0, 2).equals("AA")) {
-											if (Decoder.isValidAATrame(bruteTrame)) {
-												newRecord = Decoder.decodeAALine(bruteTrame);
-												newRecord.setDeviceId(deviceId);
-											}
+								if (bruteTrame != null && bruteTrame.length() > 6) {
+									// ===========================================
+									// brute trame => Record
+									// ===========================================
+									/**
+									 * Decode AA trame
+									 */
+									if (bruteTrame.substring(0, 2).equals("AA")) {
+										if (Decoder.isValidAATrame(bruteTrame)) {
+											newRecord = Decoder.decodeAALine(bruteTrame);
+											newRecord.setDeviceId(device);
 										}
-										/**
-										 * Decode GPRMC trame
-										 */
-										if (bruteTrame.substring(0, 6).equals("$GPRMC")) {
-											if (Decoder.isValidGPRMCTrame(bruteTrame)) {
-												newRecord = Decoder.decodeGPRMCLine(bruteTrame);
-												newRecord.setDeviceId(deviceId);
-											}
+									}
+									/**
+									 * Decode GPRMC trame
+									 */
+									if (bruteTrame.substring(0, 6).equals("$GPRMC")) {
+										if (Decoder.isValidGPRMCTrame(bruteTrame)) {
+											newRecord = Decoder.decodeGPRMCLine(bruteTrame);
+											newRecord.setDeviceId(device);
 										}
-										// load old and new record
-										if (newRecord != null) {
+									}
+									// =============================================
 
-											if (CheckIntegity.isValidePoint(newRecord.getCoordinate())
-													&& CheckIntegity.isValidSpeed(newRecord.getSpeed(), MAX_SPEED, 0)
-													&& CheckIntegity.isValidRealDate(newRecord.getRecordTime(),
-															MAX_FRAMES_LATENCY)) {
+									/** Start RT process (old,new Record) ! */
 
-												newRecord.setRealTimeRecordStatus(RealTimeRecordStatus.VALID);
-												isValidTrame = true;
-												System.out.println("valid trame (update/add record): "
-														+ newRecord.getRecordTime());
-												if (!tenantService.realTimeDAO.updateRealTimeRecord(newRecord))
-													tenantService.realTimeDAO.addRealTimeRecord(newRecord);
-											} else {
+									/** if new record is not null ! */
+									if (newRecord != null) {
 
-												isValidTrame = false;
-												System.out.println("tram invalid !");
-												int state = CheckIntegity.validityOfState(oldRecord,
-														MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE,
-														MAX_FRAMES_LATENCY_IN_STOP_CASE, DURATION_OF_NON_VALIDITY,
-														DURATION_OF_TECHNICAL_ISSUE);
-												if (state == 0) {
-													tenantService.realTimeDAO.updateRealTimeRecordStatus(deviceId,
-															RealTimeRecordStatus.NON_VALID);
-												}
-												if (state == -1) {
-													tenantService.realTimeDAO.updateRealTimeRecordStatus(deviceId,
-															RealTimeRecordStatus.TECHNICAL_ISSUE);
-												}
-											}
-
+										/** if newRecord is valid ! */
+										if (CheckIntegity.isValidePoint(newRecord.getCoordinate())
+												&& CheckIntegity.isValidSpeed(newRecord.getSpeed(), MAX_SPEED, 0)
+												&& CheckIntegity.isValidRealDate(newRecord.getRecordTime(),
+														MAX_FRAMES_LATENCY)) {
+											newRecord.setRealTimeRecordStatus(RealTimeRecordStatus.VALID);
+											System.out.println(
+													"valid trame (update/add record):" + newRecord.getRecordTime());
+											/** add or update last record ! */
+											if (!realTimeDAO.updateRealTimeRecord(tenant.getId(), newRecord))
+												realTimeDAO.addRealTimeRecord(tenant.getId(), newRecord);
 										} else {
 
-											if (oldRecord == null) {
-												Record emptyRecord = new Record();
-												emptyRecord.setDeviceId(deviceId);
-												emptyRecord.setRecordType(RecordType.AA);
-												tenantService.realTimeDAO.addRealTimeRecord(emptyRecord);
-											}
-
-											isValidTrame = false;
-											System.out.println("invalid tram !");
+											System.out.println("tram invalid !");
 											int state = CheckIntegity.validityOfState(oldRecord,
 													MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE,
 													MAX_FRAMES_LATENCY_IN_STOP_CASE, DURATION_OF_NON_VALIDITY,
 													DURATION_OF_TECHNICAL_ISSUE);
 											if (state == 0) {
-												tenantService.realTimeDAO.updateRealTimeRecordStatus(deviceId,
+												realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
 														RealTimeRecordStatus.NON_VALID);
 											}
 											if (state == -1) {
-												tenantService.realTimeDAO.updateRealTimeRecordStatus(deviceId,
+												realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
 														RealTimeRecordStatus.TECHNICAL_ISSUE);
 											}
 										}
+
+									}
+									/** if new record is null ! */
+									else {
+
+										/** if old record is null ! */
+										if (oldRecord == null) {
+											Record emptyRecord = new Record();
+											emptyRecord.setDeviceId(device);
+											emptyRecord.setRecordType(RecordType.AA);
+											realTimeDAO.addRealTimeRecord(tenant.getId(), emptyRecord);
+										}
+
+										System.out.println("invalid tram !");
+										int state = CheckIntegity.validityOfState(oldRecord,
+												MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE, MAX_FRAMES_LATENCY_IN_STOP_CASE,
+												DURATION_OF_NON_VALIDITY, DURATION_OF_TECHNICAL_ISSUE);
+										if (state == 0) {
+											realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
+													RealTimeRecordStatus.NON_VALID);
+										}
+										if (state == -1) {
+											realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
+													RealTimeRecordStatus.TECHNICAL_ISSUE);
+										}
 									}
 								}
-
-								oldRecord = null;
-								newRecord = null;
-								bruteTrame = null;
-
-								System.gc();
 							}
-//						}
+							oldRecord = null;
+							newRecord = null;
+							bruteTrame = null;
+
+						} catch (Exception e) {
+							continue;
+						}
+
 					}
-					tenantService.realTimeDAO.closeConnecions();
+					realTimeDAO.closeConnecions();
 					Thread.sleep(FREQUENCY_EXECUTION * 1000);
 				} catch (Exception e) {
 					continue;
 				} finally {
 					System.gc();
 				}
-				// end for
 			}
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	public void loadRtConfig() {

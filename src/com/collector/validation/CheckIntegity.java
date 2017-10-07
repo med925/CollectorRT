@@ -23,7 +23,7 @@ public class CheckIntegity {
 
 	public static boolean isValidRealDate(Timestamp recordTime, int intervalInSecond) {
 		// float now = new Date().getTime() - 3600000;
-		float now = new Date().getTime() - 3600000;
+		float now = new Date().getTime();
 		if ((recordTime.getTime() <= now) && (recordTime.getTime() >= (now - intervalInSecond * 1000)))
 			return true;
 		else
@@ -43,7 +43,6 @@ public class CheckIntegity {
 			System.out.println("Check validity process start");
 			System.out.println("speed LT : " + speedOfLastRealTimeRecord);
 			System.out.println("status LT : " + stateOfLastRealTimeRecord);
-			System.out.println("time LT : " + timestampOfLastRealTimeRecord.getTime());
 
 			float numberOfSecondBetweenNowAndTimeOfLastTrame = new Date().getTime() - 3600000
 					- timestampOfLastRealTimeRecord.getTime();

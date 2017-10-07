@@ -1,51 +1,39 @@
 package com.collector.model;
 
-import java.util.Vector;
+import java.util.List;
 
 public class Tenant {
-	private int id;
-	private String password, username;
-	Vector<Device> devices;
+	private long id;
+	private List<Long> devices;
 
-	public Tenant(int id) {
+	public Tenant(long id) {
 		super();
 		this.id = id;
 	}
 
-	public int getId() {
+	public long getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public Vector<Device> getDevices() {
+	public List<Long> getDevices() {
 		return devices;
 	}
 
-	public void setDevices(Vector<Device> devices) {
+	public void setDevices(List<Long> devices) {
 		this.devices = devices;
 	}
 
-	public void addDevice(Device d) {
-		this.devices.add(d);
+	@Override
+	public String toString() {
+		String deviceInterval = "empty";
+		if (devices.size() > 0) {
+			deviceInterval = "[" + devices.get(0) + " - " + devices.get(devices.size() - 1) + "]";
+		}
+		return "Tenant : " + id + ", devices : " + deviceInterval;
 	}
 
 }
