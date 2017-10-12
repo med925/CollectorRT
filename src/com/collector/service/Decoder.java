@@ -24,7 +24,7 @@ public class Decoder {
 
 		// $GPRMC,164351.00,A,3217.7658,N,00625.4544,W,000.0,251�C,230217,00.0,W,064CB,FE0A0A0066
 
-		if (ops.length == 13) {
+		if (ops.length == 13 || ops.length == 14) {
 
 			PointCardinal vertical = (ops[4].equals("N")) ? PointCardinal.NORD : PointCardinal.SUD; // S
 			PointCardinal horizontal = (ops[6].equals("E")) ? PointCardinal.EST : PointCardinal.OUEST;
@@ -52,9 +52,36 @@ public class Decoder {
 			}
 
 			Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+
 			Record record = new Record(timestamp, p, vertical, horizontal, (int) Double.parseDouble(ops[7]), ops[8],
 					(int) Double.parseDouble(ops[10]), validity, ignition);
 			record.setRecordType(RecordType.GPRMC);
+
+			if (ops.length == 14) {
+				try {
+					int x = Integer.parseInt(ops[13].substring(0, 2), 16);
+					int y = Integer.parseInt(ops[13].substring(2, 4), 16);
+					int z = Integer.parseInt(ops[13].substring(4, 6), 16);
+
+					if (x > 128) {
+						x = x - 256;
+					}
+
+					if (y > 128) {
+						y = y - 256;
+					}
+
+					if (z > 128) {
+						z = z - 256;
+					}
+					record.setMems_x(x);
+					record.setMems_y(y);
+					record.setMems_z(z);
+				} catch (Exception e) {
+					System.out.println("error parse mems_i gprmc 86 !");
+				}
+			}
+
 			System.gc();
 			return record;
 		} else
@@ -62,7 +89,7 @@ public class Decoder {
 	}
 
 	public static boolean isValidAATrame(String line) {
-		if (line.length() == 74  || line.length() == 104 /**/) {
+		if (line.length() == 74 || line.length() == 104 /**/) {
 			return true;
 		} else {
 			return false;
@@ -70,7 +97,7 @@ public class Decoder {
 	}
 
 	public static boolean isValidGPRMCTrame(String line) {
-		if (line.length() == 75/* || line.length() == 86 */) {
+		if (line.length() == 75 || line.length() == 86) {
 			return true;
 		} else {
 			return false;
@@ -110,7 +137,7 @@ public class Decoder {
 		Mems_z = (Mems_z > 128) ? Mems_z - 256 : Mems_z;
 		// String Temp = line.substring(44, 48); // temp�rature
 		// int Odo = Integer.parseInt(line.substring(48, 56), 16); // odo
-    	int Heading = Integer.parseInt(line.substring(30, 32), 16); // cap
+		int Heading = Integer.parseInt(line.substring(30, 32), 16); // cap
 		int SendFlag = Integer.parseInt(line.substring(56, 58)); // added flags
 		// int addedinfo = Integer.parseInt(line.substring(58, 66)); //
 		// addedinfo
@@ -125,40 +152,43 @@ public class Decoder {
 		Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
 		int signal = 0;
 		int SatInView = 0;
-                // FMS valus
-                int fmsFuel=0;
-                int fmsTemp=0;
-                int fmsRpm=0;
-                int fmsConso=0;
-                double fmsOdo=0;
-                double fmsTfu=0;
-                Record record=null;
+		// FMS valus
+		int fmsFuel = 0;
+		int fmsTemp = 0;
+		int fmsRpm = 0;
+		int fmsConso = 0;
+		double fmsOdo = 0;
+		double fmsTfu = 0;
+		Record record = null;
 		if (lineLength == 74) {
 			SatInView = Integer.parseInt(line.substring(70, 72), 16);
 			signal = Integer.parseInt(line.substring(72, 74), 16);
-                        record = new Record(timestamp, new Point(Lat, Lon), (int) Math.round(Integer.parseInt(Speed) * 0.1852),
-				Power, Ignition, Mems_x, Mems_y, Mems_z, SendFlag, SatInView, signal, Validity,Heading);
-		
+			record = new Record(timestamp, new Point(Lat, Lon), (int) Math.round(Integer.parseInt(Speed) * 0.1852),
+					Power, Ignition, Mems_x, Mems_y, Mems_z, SendFlag, SatInView, signal, Validity, Heading);
+
 		} else if (lineLength == 104) {
-                        fmsFuel=Integer.parseInt(line.substring(70, 72), 16);
-                        fmsTemp=Integer.parseInt(line.substring(72, 74), 16)-40;
-                        fmsOdo=new BigInteger(line.substring(74, 82), 16).longValue();
-                        fmsRpm=Integer.parseInt(line.substring(84, 88), 16);
-                        fmsConso=Integer.parseInt(line.substring(88, 92), 16);
-                        fmsTfu=new BigInteger(line.substring(92, 100), 16).longValue();
-                        SatInView = Integer.parseInt(line.substring(100, 102),16);
-			signal = Integer.parseInt(line.substring(102, 104),16);
-                        record = new Record(timestamp, new Point(Lat, Lon), (int) Math.round(Integer.parseInt(Speed) * 0.1852),
-				Power, Ignition, Mems_x, Mems_y, Mems_z, SendFlag, SatInView, signal, Validity,fmsFuel,fmsTemp,fmsOdo,fmsRpm, fmsConso,fmsTfu,Heading);
-		
+			fmsFuel = Integer.parseInt(line.substring(70, 72), 16);
+			fmsTemp = Integer.parseInt(line.substring(72, 74), 16) - 40;
+			fmsOdo = new BigInteger(line.substring(74, 82), 16).longValue();
+			fmsRpm = Integer.parseInt(line.substring(84, 88), 16);
+			fmsConso = Integer.parseInt(line.substring(88, 92), 16);
+			fmsTfu = new BigInteger(line.substring(92, 100), 16).longValue();
+			SatInView = Integer.parseInt(line.substring(100, 102), 16);
+			signal = Integer.parseInt(line.substring(102, 104), 16);
+			record = new Record(timestamp, new Point(Lat, Lon), (int) Math.round(Integer.parseInt(Speed) * 0.1852),
+					Power, Ignition, Mems_x, Mems_y, Mems_z, SendFlag, SatInView, signal, Validity, fmsFuel, fmsTemp,
+					fmsOdo, fmsRpm, fmsConso, fmsTfu, Heading);
+
 		}
 		record.setRecordType(RecordType.AA);
 		System.gc();
 		return record;
-		
+
 	}
-        
-        public static void main(String[] args) {
-            System.out.println(decodeAALine("AA1300BF10022AC80A009B78FE00002CA900FDFDFD6380FB000000000400000000177B5C49000A2E1E000000FAFF0000C6490B18").toString());
-        }
+
+	public static void main(String[] args) {
+		System.out.println(decodeAALine(
+				"AA1300BF10022AC80A009B78FE00002CA900FDFDFD6380FB000000000400000000177B5C49000A2E1E000000FAFF0000C6490B18")
+						.toString());
+	}
 }
