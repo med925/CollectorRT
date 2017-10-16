@@ -204,6 +204,7 @@ public class ClientWorker implements Runnable {
 					continue;
 				} finally {
 					System.gc();
+					realTimeDAO.closeConnecions();
 				}
 			}
 		} catch (IOException e) {

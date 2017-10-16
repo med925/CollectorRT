@@ -48,6 +48,7 @@ public class RealTimeDAO {
 			tenant.setDevices(this.getAllDevicesOfTenant(tenant.getId()));
 			tenants.add(tenant);
 		}
+		this.rimtrackTenant.disconnect();
 		return tenants;
 	}
 
@@ -65,6 +66,7 @@ public class RealTimeDAO {
 		while (devices.next()) {
 			deviceIds.add(devices.getLong("id_device"));
 		}
+		this.rimtrackClient.disconnect();
 		return deviceIds;
 	}
 
@@ -76,13 +78,14 @@ public class RealTimeDAO {
 		if (bruteTrames.next()) {
 			bruteTrame = bruteTrames.getString("last_trame");
 		}
+		this.rimtrackRaw.disconnect();
 		return bruteTrame;
 	}
 
 	public boolean addRealTimeRecord(long idTenant,Record realTimeRecord) {
 		String insertRequest = "";
 		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant
-				+ "?autoReconnect=true&useSSL=false");
+				+ "?useSSL=false");
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
 			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,speed,fuel,temperature,validity,ignition,status,type)"
 					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
@@ -106,13 +109,14 @@ public class RealTimeDAO {
 		}
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(insertRequest) != 0 ? true : false;
+		this.rimtrackClient.disconnect();
 		return isPersisted;
 	}
 
 	public boolean updateRealTimeRecord(long idTenant, Record realTimeRecord) {
 		String updateRequest = "";
 		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant
-				+ "?autoReconnect=true&useSSL=false");
+				+ "?useSSL=false");
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
 			updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
 					+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
@@ -137,6 +141,7 @@ public class RealTimeDAO {
 		}
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
+		this.rimtrackClient.disconnect();
 		return isPersisted;
 	}
 
@@ -144,9 +149,10 @@ public class RealTimeDAO {
 		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus + "' where deviceid = "
 				+ deviceId;
 		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant
-				+ "?autoReconnect=true&useSSL=false");
+				+ "?useSSL=false");
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
+		this.rimtrackClient.disconnect();
 		return isPersisted;
 	}
 
@@ -158,7 +164,7 @@ public class RealTimeDAO {
 		String selectRequest = "SELECT * FROM real_time_dev WHERE deviceid = " + deviceId + " LIMIT 1";
 		Record record = null;
 		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + tenantId
-				+ "?autoReconnect=true&useSSL=false");
+				+ "?useSSL=false");
 		this.rimtrackClient.connect();
 		ResultSet realTimeRecordResultSSet = this.rimtrackClient.select(selectRequest);
 		if (realTimeRecordResultSSet.next()) {
@@ -228,35 +234,10 @@ public class RealTimeDAO {
 		return record;
 	}
 
-	// public ResultSet getAllDevices() throws SQLException {
-	// String selectRequest = "";
-	// this.rimtrackClient.connect();
-	// ResultSet bruteTrames = this.rimtrackRaw.select(selectRequest);
-	// return bruteTrames;
-	// }
-
-	public DBInteraction newClientConnexion(String dbName, String dbUrl, String dbUsername, String dbPassword) {
-		this.rimtrackClient = new DBInteraction(dbUrl + dbName, dbUsername, dbPassword);
-		return this.rimtrackClient;
-	}
-
-	public ResultSet findTenants() throws SQLException {
-		String selectRequest = "SELECT * FROM `user`";
-		this.rimtrackTenant.connect();
-		ResultSet tenants = this.rimtrackTenant.select(selectRequest);
-		return tenants;
-	}
-
-	public ResultSet findDevices(int id) throws SQLException {
-		String selectRequest = "SELECT * FROM `device`";
-		this.rimtrackClient.connect();
-		ResultSet devices = this.rimtrackClient.select(selectRequest);
-		return devices;
-	}
-
 	public void closeConnecions() {
 		this.rimtrackClient.disconnect();
 		this.rimtrackRaw.disconnect();
+		this.rimtrackTenant.disconnect();
 		System.gc();
 	}
 
