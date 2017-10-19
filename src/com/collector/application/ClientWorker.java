@@ -12,7 +12,6 @@ import com.collector.model.DbProperties;
 import com.collector.model.Record;
 import com.collector.model.Tenant;
 import com.collector.model.type.RealTimeRecordStatus;
-import com.collector.model.type.RecordType;
 import com.collector.service.Decoder;
 import com.collector.validation.CheckIntegity;
 
@@ -133,33 +132,32 @@ public class ClientWorker implements Runnable {
 													realTimeDAO.addRealTimeRecord(tenant.getId(), newRecord);
 											} else {
 
-												System.out.println("tram invalid !");
-												int state = CheckIntegity.validityOfState(oldRecord,
-														MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE,
-														MAX_FRAMES_LATENCY_IN_STOP_CASE, DURATION_OF_NON_VALIDITY,
-														DURATION_OF_TECHNICAL_ISSUE);
-												if (state == 0) {
-													realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
-															RealTimeRecordStatus.NON_VALID);
+												if(oldRecord!=null){
+													System.out.println("tram invalid !");
+													int state = CheckIntegity.validityOfState(oldRecord,
+															MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE,
+															MAX_FRAMES_LATENCY_IN_STOP_CASE, DURATION_OF_NON_VALIDITY,
+															DURATION_OF_TECHNICAL_ISSUE);
+													if (state == 0) {
+														realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
+																RealTimeRecordStatus.NON_VALID);
+													}
+													if (state == -1) {
+														realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
+																RealTimeRecordStatus.TECHNICAL_ISSUE);
+													}
 												}
-												if (state == -1) {
-													realTimeDAO.updateRealTimeRecordStatus(tenant.getId(), device,
-															RealTimeRecordStatus.TECHNICAL_ISSUE);
+												else{
+													/**init old record by the last state*/
+													realTimeDAO.addRealTimeRecord(tenant.getId(), newRecord);
 												}
+												
 											}
 
 										}
 										/** if new record is null ! */
 										else {
-
-											/** if old record is null ! */
-											if (oldRecord == null) {
-												Record emptyRecord = new Record();
-												emptyRecord.setDeviceId(device);
-												emptyRecord.setRecordType(RecordType.AA);
-												realTimeDAO.addRealTimeRecord(tenant.getId(), emptyRecord);
-											}
-
+											
 											System.out.println("invalid tram !");
 											int state = CheckIntegity.validityOfState(oldRecord,
 													MAX_FRAMES_LATENCY_IN_MOUVEMENT_CASE,
