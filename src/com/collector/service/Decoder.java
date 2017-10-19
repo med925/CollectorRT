@@ -24,7 +24,7 @@ public class Decoder {
 
 		// $GPRMC,164351.00,A,3217.7658,N,00625.4544,W,000.0,251�C,230217,00.0,W,064CB,FE0A0A0066
 
-		if (ops.length == 13 || ops.length == 14) {
+		if (ops.length == 13 || ops.length == 14 || ops.length == 14) {
 
 			PointCardinal vertical = (ops[4].equals("N")) ? PointCardinal.NORD : PointCardinal.SUD; // S
 			PointCardinal horizontal = (ops[6].equals("E")) ? PointCardinal.EST : PointCardinal.OUEST;
