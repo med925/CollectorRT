@@ -1,10 +1,15 @@
 package com.collector.dao;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 
 import com.collector.model.DbProperties;
 import com.collector.model.Record;
@@ -53,6 +58,23 @@ public class RealTimeDAO {
 	}
 
 	/**
+	 * getAllTenants : allows you to retrieve all active tenants
+	 */
+	public List<Tenant> getAllRemoteTenants() throws SQLException {
+		List<Tenant> tenants = new ArrayList<Tenant>();
+		String selectRequest = "SELECT * FROM `user` where compte_web_id = 123";
+		this.rimtrackTenant.connect();
+		ResultSet tenantsRS = this.rimtrackTenant.select(selectRequest);
+		while (tenantsRS.next()) {
+			Tenant tenant = new Tenant(tenantsRS.getLong("compte_web_id"));
+			tenant.setDevices(this.getAllDevicesOfTenant(tenant.getId()));
+			tenants.add(tenant);
+		}
+		this.rimtrackTenant.disconnect();
+		return tenants;
+	}
+
+	/**
 	 * getAllDevicesOfTenant : allows you to retrieve all device(boitier) of
 	 * specific tenant
 	 */
@@ -82,10 +104,27 @@ public class RealTimeDAO {
 		return bruteTrame;
 	}
 
-	public boolean addRealTimeRecord(long idTenant,Record realTimeRecord) {
+	@SuppressWarnings("deprecation")
+	public String getLastRemoteBruteTrame(Long deviceId) throws SQLException, MalformedURLException, IOException {
+
+		InputStream in = new URL("http://81.192.42.130/listing_boitier_rt.php?login=oni&pass=oni&idb="+deviceId).openStream();
+		String bruteTrame = null;
+
+		try {
+			bruteTrame = IOUtils.toString(in);
+			String[] trams = bruteTrame.split("</html>");
+			bruteTrame = trams[0].replaceAll("\\s", "");
+		} finally {
+			IOUtils.closeQuietly(in);
+		}
+
+		return bruteTrame;
+	}
+
+	public boolean addRealTimeRecord(long idTenant, Record realTimeRecord) {
 		String insertRequest = "";
-		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant
-				+ "?useSSL=false");
+		this.rimtrackClient
+				.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant + "?useSSL=false");
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
 			insertRequest = "INSERT INTO real_time_dev (deviceid,record_time,latitude,longitude,speed,fuel,temperature,validity,ignition,status,type)"
 					+ "VALUES(" + realTimeRecord.getDeviceId() + ", '" + realTimeRecord.getRecordTime() + "',"
@@ -115,8 +154,8 @@ public class RealTimeDAO {
 
 	public boolean updateRealTimeRecord(long idTenant, Record realTimeRecord) {
 		String updateRequest = "";
-		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant
-				+ "?useSSL=false");
+		this.rimtrackClient
+				.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant + "?useSSL=false");
 		if (realTimeRecord.getRecordType() == RecordType.GPRMC) {
 			updateRequest = "UPDATE real_time_dev SET record_time = '" + realTimeRecord.getRecordTime()
 					+ "', latitude = " + realTimeRecord.getCoordinate().getLatitude() + ", longitude = "
@@ -148,8 +187,8 @@ public class RealTimeDAO {
 	public boolean updateRealTimeRecordStatus(long idTenant, long deviceId, RealTimeRecordStatus RealTimeRecordStatus) {
 		String updateRequest = "UPDATE real_time_dev SET status = '" + RealTimeRecordStatus + "' where deviceid = "
 				+ deviceId;
-		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant
-				+ "?useSSL=false");
+		this.rimtrackClient
+				.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + idTenant + "?useSSL=false");
 		this.rimtrackClient.connect();
 		boolean isPersisted = this.rimtrackClient.MAJ(updateRequest) != 0 ? true : false;
 		this.rimtrackClient.disconnect();
@@ -163,8 +202,8 @@ public class RealTimeDAO {
 	public Record getLastRealTimeRecord(Long tenantId, Long deviceId) throws SQLException {
 		String selectRequest = "SELECT * FROM real_time_dev WHERE deviceid = " + deviceId + " LIMIT 1";
 		Record record = null;
-		this.rimtrackClient.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + tenantId
-				+ "?useSSL=false");
+		this.rimtrackClient
+				.setUrl(dbProperties.getUserDbUrl() + dbProperties.getUserDbName() + tenantId + "?useSSL=false");
 		this.rimtrackClient.connect();
 		ResultSet realTimeRecordResultSSet = this.rimtrackClient.select(selectRequest);
 		if (realTimeRecordResultSSet.next()) {
